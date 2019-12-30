@@ -1,0 +1,118 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <table id="gallery"></table>
+	<table id="bigImg"><tr><td align="right"><button id="cancel">close</button></td></tr><tr><td><img></img></td></tr></table>
+</body>
+
+<script>
+	var iw = window.innerWidth;
+	var ih = window.innerHeight;
+	//number of horizontal cells
+	var nHc = Math.floor(iw/200);
+
+	var table = document.getElementById("gallery");
+	var bigImgTable = document.getElementById("bigImg");
+	document.body.removeChild(bigImgTable);
+	var bigImgPlaceholder = bigImgTable.rows[1].cells[0].childNodes[0];
+	bigImgPlaceholder.width = iw-100;
+
+	//////////////// Get list of all images ////////////////
+	var imgsRequest = new XMLHttpRequest();
+	imgsRequest.open("GET", "/list", true);
+	imgsRequest.onreadystatechange = function() {
+	    if (this.readyState == 4 && this.status == 200) {
+	        loadAll(JSON.parse(this.responseText));
+	    }
+	};
+	imgsRequest.send();
+	///////////////////////////////////////////////////////
+
+	function loadAll(imgs) {
+		//serial number of the current image
+		var index = 0;
+		//serial number of the current row
+		var rowIndex = 0;
+		while(index < imgs.length) {
+			var row = table.insertRow(rowIndex);
+			//serial number of the cell
+			var cellIndex = 0;
+			while(index < imgs.length && cellIndex < nHc) {
+				var cell = row.insertCell(cellIndex);
+				var img = new Image();
+		  		img.id = imgs[index];
+		  		img.addEventListener("click", bigImage);
+		  		cell.appendChild(img);
+				
+				loadImg(imgs[index]+"");
+				
+				cellIndex++;
+				index++;
+			}
+			rowIndex++;
+		}
+	}
+	
+	//imgId is equal to the img name
+	function loadImg(imgId) {
+		var oReq = new XMLHttpRequest();
+		oReq.open("POST", "/img", true);
+		oReq.responseType = "arraybuffer";
+		
+		oReq.onload = function(oEvent) {
+		  var blob = new Blob([oReq.response], {type: "image/bmp"});
+		  var objectURL = URL.createObjectURL(blob);
+		  
+		  var img = document.getElementById(imgId);
+		  img.src = objectURL;
+		};
+		oReq.send(imgId);
+	}
+	
+	/////////////////// Load big image ////////////////////
+	function bigImage() {
+		table.parentNode.removeChild(table);
+		//table.style.visibility="hidden";
+		loadBigImage(this.id);
+	}
+
+	//imgName is equal to img id
+	function loadBigImage(imgName) {
+		//replace bmp extension to jpg
+		var bigImgName = imgName.substring(0,imgName.indexOf(".")) + ".jpg";
+	
+		var oReq = new XMLHttpRequest();
+		oReq.open("POST", "/big-img", true);
+		oReq.responseType = "arraybuffer";
+		
+		oReq.onload = function(oEvent) {
+		  var blob = new Blob([oReq.response], {type: "image/jpg"});
+		  var objectURL = URL.createObjectURL(blob);
+		  
+		  bigImgPlaceholder.src = objectURL;
+		  document.body.appendChild(bigImgTable);
+		};
+		oReq.send(bigImgName);
+	}
+	///////////////////////////////////////////////////////
+
+
+	/////////////////// Cancel button /////////////////////
+	var cancelButton = bigImgTable.childNodes[0]
+								  .childNodes[0]
+								  .childNodes[0];
+	cancelButton.addEventListener("click", closeBigImg);
+	
+	function closeBigImg() {
+		bigImgTable.parentNode.removeChild(bigImgTable);
+		document.body.appendChild(table);
+	}
+	///////////////////////////////////////////////////////
+
+</script>
+
+</html>
