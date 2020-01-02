@@ -6,39 +6,68 @@
 </head>
 <body>
     <table id="gallery"></table>
-	<table id="bigImg"><tr><td align="right"><button id="cancel">close</button></td></tr><tr><td><img></img></td></tr></table>
+	<table id="bigImg" align="center" cellspacing="10px">
+		<tr>
+			<td align="right"><img></img></td>
+		</tr>
+		<tr>
+			<td valign="top"><img></img></td>
+		</tr>
+	</table>
+	<div>
+		<table id="loadingImg" align="center">
+			<tr>
+				<td><img></img></td>
+			</tr>
+		</table>
+	</div>
 </body>
 
 <script>
-	var iw = window.innerWidth;
-	var ih = window.innerHeight;
-	//number of horizontal cells
-	var nHc = Math.floor(iw/200);
-
-	var table = document.getElementById("gallery");
-	var bigImgTable = document.getElementById("bigImg");
-	document.body.removeChild(bigImgTable);
-	var bigImgPlaceholder = bigImgTable.rows[1].cells[0].childNodes[0];
-	bigImgPlaceholder.width = iw-100;
-
-	//////////////// Get list of all images ////////////////
-	var imgsRequest = new XMLHttpRequest();
-	imgsRequest.open("GET", "/list", true);
-	imgsRequest.onreadystatechange = function() {
-	    if (this.readyState == 4 && this.status == 200) {
-	        loadAll(JSON.parse(this.responseText));
-	    }
-	};
-	imgsRequest.send();
+	/////////////////// Loading image /////////////////////
+	function initResourceImage(resourceDescriptor) {
+		var oReq = new XMLHttpRequest();
+		oReq.open("POST", "/resource-img", true);
+		oReq.responseType = "arraybuffer";
+		
+		oReq.onload = function(oEvent) {
+		  var blob = new Blob([oReq.response], {type: resourceDescriptor.type});
+		  var objectURL = URL.createObjectURL(blob);
+		  
+		  resourceDescriptor.obj.src = objectURL;
+		  
+		  if(resourceDescriptor.next != null) {
+		  	initResourceImage(resourceDescriptor.next);
+		  } else {
+		  	initGallery();
+		  }
+		};
+		oReq.send(resourceDescriptor.name);
+	}
 	///////////////////////////////////////////////////////
 
+	//////////////// gallery //////////////////////////////
+	//Getting list of all images in the gallery as well as triggering 
+	//loading of the images itself
+	function initGallery() {
+		var imgsRequest = new XMLHttpRequest();
+		imgsRequest.open("GET", "/list", true);
+		imgsRequest.onreadystatechange = function() {
+		    if (this.readyState == 4 && this.status == 200) {
+		        loadAll(JSON.parse(this.responseText));
+		    }
+		};
+		imgsRequest.send();
+	}
+
+	//Load all images defined by imgs list
 	function loadAll(imgs) {
 		//serial number of the current image
 		var index = 0;
 		//serial number of the current row
 		var rowIndex = 0;
 		while(index < imgs.length) {
-			var row = table.insertRow(rowIndex);
+			var row = galleryTable.insertRow(rowIndex);
 			//serial number of the cell
 			var cellIndex = 0;
 			while(index < imgs.length && cellIndex < nHc) {
@@ -57,6 +86,7 @@
 		}
 	}
 	
+	//Load single img by its name
 	//imgId is equal to the img name
 	function loadImg(imgId) {
 		var oReq = new XMLHttpRequest();
@@ -72,11 +102,14 @@
 		};
 		oReq.send(imgId);
 	}
+	///////////////////////////////////////////////////////
 	
 	/////////////////// Load big image ////////////////////
 	function bigImage() {
-		table.parentNode.removeChild(table);
-		//table.style.visibility="hidden";
+		galleryTable.parentNode.removeChild(galleryTable);
+				
+		document.body.appendChild(loadingImgTable.parentNode);
+		
 		loadBigImage(this.id);
 	}
 
@@ -93,25 +126,64 @@
 		  var blob = new Blob([oReq.response], {type: "image/jpg"});
 		  var objectURL = URL.createObjectURL(blob);
 		  
-		  bigImgPlaceholder.src = objectURL;
+		  bigImg.src = objectURL;
+		  document.body.removeChild(loadingImgTable.parentNode);
 		  document.body.appendChild(bigImgTable);
 		};
 		oReq.send(bigImgName);
 	}
 	///////////////////////////////////////////////////////
 
-
 	/////////////////// Cancel button /////////////////////
-	var cancelButton = bigImgTable.childNodes[0]
-								  .childNodes[0]
-								  .childNodes[0];
-	cancelButton.addEventListener("click", closeBigImg);
-	
 	function closeBigImg() {
 		bigImgTable.parentNode.removeChild(bigImgTable);
-		document.body.appendChild(table);
+		document.body.appendChild(galleryTable);
 	}
 	///////////////////////////////////////////////////////
+	
+	/////////////////// global  space /////////////////////
+	var iw = window.innerWidth;
+	var ih = window.innerHeight;
+	//number of horizontal cells in gallery table
+	var nHc = Math.floor(iw/200);
+	
+	var galleryTable = document.getElementById("gallery");
+	var bigImgTable = document.getElementById("bigImg");
+	document.body.removeChild(bigImgTable);
+	var loadingImgTable = document.getElementById("loadingImg");
+	document.body.removeChild(loadingImgTable.parentNode);
+	loadingImgTable.parentNode.style.marginTop = Math.floor(ih/3) + "px";
+	
+	var bigImg = bigImgTable.getElementsByTagName("img")[1];
+	bigImg.width = iw-100;
+	
+	var cancelImg = bigImgTable.getElementsByTagName("img")[0];
+	cancelImg.width = Math.floor(bigImg.width/10);
+	
+	//before big image is loaded loading image is shown
+	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
+	
+	//big image navigation buttons
+	var cancelImgTd = cancelImg.parentNode;
+	cancelImgTd.addEventListener("click", closeBigImg);
+	///////////////////////////////////////////////////////
+
+	var loadingDescriptor = new Object();
+	loadingDescriptor.obj=loadingImg;
+	loadingDescriptor.type="image/gif";
+	loadingDescriptor.name="loading.gif";
+	loadingDescriptor.next = null;
+	
+	var cancelDescriptor = new Object();
+	cancelDescriptor.obj=cancelImg;
+	cancelDescriptor.type="image/png";
+	cancelDescriptor.name="cancel.png";
+	cancelDescriptor.next = null;
+	
+	loadingDescriptor.next = cancelDescriptor;
+	
+	//start initialization
+	initResourceImage(loadingDescriptor);
 
 </script>
 

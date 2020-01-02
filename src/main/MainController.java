@@ -17,6 +17,8 @@ import java.util.ResourceBundle;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +36,8 @@ public class MainController {
 	private String minPathRoot = ResourceBundle.getBundle("app").getString("min-path");
 	
 	private String bigPathRoot = ResourceBundle.getBundle("app").getString("big-path");
+	
+	private String imgResourcesPathRoot = ResourceBundle.getBundle("app").getString("img-resources-path");
 	
 	@GetMapping("/list")
 	public @ResponseBody List<String> list() throws IOException {
@@ -132,6 +136,16 @@ public class MainController {
 		logger.info(imgName);
 		
 		Path p = Paths.get(bigPathRoot).resolve(Paths.get(imgName));
+		InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
+		
+		byte[] inarr = new byte[is.available()];
+		is.read(inarr);
+		return inarr;
+	}
+	
+	@PostMapping("/resource-img")
+	public @ResponseBody byte[] getResourceImg(@RequestBody String imgName) throws IOException {
+		Path p = Paths.get(imgResourcesPathRoot).resolve(Paths.get(imgName));
 		InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
 		
 		byte[] inarr = new byte[is.available()];

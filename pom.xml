@@ -84,6 +84,7 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 				<log>C:\endava\workspace\cloud-servant-view\logs\</log>
 				<min-path>C:\endava\workspace\jpeg-decoder\output\</min-path>
 				<big-path>C:\endava\workspace\jpeg-decoder\input\</big-path>
+				<img-resources-path>C:\endava\workspace\cloud-servant-view\img-resources</img-resources-path>
 			</properties>
 		</profile>
 		<profile>
@@ -92,6 +93,7 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 				<log>/usr/cloud-servant-view/.logs/</log>
 				<min-path>/media/pi/seagate/repo-min/photo-min/</min-path>
 				<big-path>/media/pi/seagate/repo/photo/2019/zurich_03</big-path>
+				<img-resources-path>/media/pi/seagate/repo-min/img-resources</img-resources-path>
 			</properties>
 		</profile>
 	</profiles>
