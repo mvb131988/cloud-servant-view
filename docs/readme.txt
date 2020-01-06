@@ -7,3 +7,8 @@
  
  scp -P 51313 cloud-servant-view.jar pi@92.115.183.17:/usr/cloud-servant-view
  nohup java -jar -Xmx128m -Dname=cloud-servant-view cloud-servant-view.jar >/dev/null &
+ 
+ ########################################################################################
+ Copy resource images
+ 
+ scp -P 51313 /local/path/to/resource/image pi@92.115.183.17:/media/pi/seagate/repo-min/img-resources

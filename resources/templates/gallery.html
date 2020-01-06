@@ -5,19 +5,23 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-    <table id="gallery"></table>
+    <table id="gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
 	<table id="bigImg" align="center" cellspacing="10px">
 		<tr>
-			<td align="right"><img></img></td>
+			<td align="right">
+				<img id="prevImg"></img>
+				<img id="nextImg"></img>
+				<img id="cancelImg"></img>
+			</td>
 		</tr>
 		<tr>
-			<td valign="top"><img></img></td>
+			<td valign="top"><img id="bigImg"></img></td>
 		</tr>
 	</table>
 	<div>
-		<table id="loadingImg" align="center">
+		<table id="loadingImgTable" align="center">
 			<tr>
-				<td><img></img></td>
+				<td><img id="loadingImg"></img></td>
 			</tr>
 		</table>
 	</div>
@@ -54,14 +58,16 @@
 		imgsRequest.open("GET", "/list", true);
 		imgsRequest.onreadystatechange = function() {
 		    if (this.readyState == 4 && this.status == 200) {
-		        loadAll(JSON.parse(this.responseText));
+		        imgs = JSON.parse(this.responseText);
+		        initImgMaps(imgs); 
+		        loadAll();
 		    }
 		};
 		imgsRequest.send();
 	}
 
 	//Load all images defined by imgs list
-	function loadAll(imgs) {
+	function loadAll() {
 		//serial number of the current image
 		var index = 0;
 		//serial number of the current row
@@ -92,7 +98,6 @@
 		var oReq = new XMLHttpRequest();
 		oReq.open("POST", "/img", true);
 		oReq.responseType = "arraybuffer";
-		
 		oReq.onload = function(oEvent) {
 		  var blob = new Blob([oReq.response], {type: "image/bmp"});
 		  var objectURL = URL.createObjectURL(blob);
@@ -102,6 +107,22 @@
 		};
 		oReq.send(imgId);
 	}
+	
+	//init maps of <img name> -> <next img name>, 
+	//			   <img name> -> <prev img name>
+	function initImgMaps(imgs) {
+		nextImgs = new Map();
+		prevImgs = new Map();
+		
+		var i;
+		for(i=0; i<imgs.length; i++) {
+			var next = i < imgs.length - 1 ? imgs[i+1] : null;
+			nextImgs.set(imgs[i], next);
+			var prev = i > 0 ? imgs[i-1] : null;
+			prevImgs.set(imgs[i], prev);
+		}
+	}
+	
 	///////////////////////////////////////////////////////
 	
 	/////////////////// Load big image ////////////////////
@@ -127,10 +148,29 @@
 		  var objectURL = URL.createObjectURL(blob);
 		  
 		  bigImg.src = objectURL;
+		  bigImg.name = imgName.substring(0,imgName.indexOf("."));
 		  document.body.removeChild(loadingImgTable.parentNode);
 		  document.body.appendChild(bigImgTable);
 		};
 		oReq.send(bigImgName);
+	}
+	
+	function loadNextBigImg() {
+		var next = nextImgs.get(bigImg.name + ".bmp");
+		if(next != null) {
+			bigImgTable.parentNode.removeChild(bigImgTable);
+			document.body.appendChild(loadingImgTable.parentNode);
+			loadBigImage(next);
+		}
+	}
+	
+	function loadPrevBigImg() {
+		var prev = prevImgs.get(bigImg.name + ".bmp");
+		if(prev != null) {
+			bigImgTable.parentNode.removeChild(bigImgTable);
+			document.body.appendChild(loadingImgTable.parentNode);
+			loadBigImage(prev);
+		}
 	}
 	///////////////////////////////////////////////////////
 
@@ -141,31 +181,58 @@
 	}
 	///////////////////////////////////////////////////////
 	
+	/////////////////// Helpers  //////////////////////////
+	function findById(id, elements) {
+		var i;
+		for(i=0; i<elements.length; i++) {
+			if(elements[i].id == id) {return elements[i];}
+		}
+		return null;
+	}
+	///////////////////////////////////////////////////////
+	
 	/////////////////// global  space /////////////////////
 	var iw = window.innerWidth;
 	var ih = window.innerHeight;
 	//number of horizontal cells in gallery table
 	var nHc = Math.floor(iw/200);
 	
+	//consider table cellspacing
+	while((nHc*200 + nHc*5*2) > iw) {
+		nHc--;
+	} 
+	
 	var galleryTable = document.getElementById("gallery");
 	var bigImgTable = document.getElementById("bigImg");
 	document.body.removeChild(bigImgTable);
-	var loadingImgTable = document.getElementById("loadingImg");
+	var loadingImgTable = document.getElementById("loadingImgTable");
 	document.body.removeChild(loadingImgTable.parentNode);
 	loadingImgTable.parentNode.style.marginTop = Math.floor(ih/3) + "px";
 	
-	var bigImg = bigImgTable.getElementsByTagName("img")[1];
+	var bigImg = findById("bigImg", bigImgTable.getElementsByTagName("img"));
 	bigImg.width = iw-100;
 	
-	var cancelImg = bigImgTable.getElementsByTagName("img")[0];
+	var cancelImg = findById("cancelImg", bigImgTable.getElementsByTagName("img"));
 	cancelImg.width = Math.floor(bigImg.width/10);
+	cancelImg.addEventListener("click", closeBigImg);
+	
+	var prevImg = findById("prevImg", bigImgTable.getElementsByTagName("img"));
+	prevImg.width = Math.floor(bigImg.width/10);
+	prevImg.addEventListener("click", loadPrevBigImg);
+	
+	var nextImg = findById("nextImg", bigImgTable.getElementsByTagName("img"));
+	nextImg.width = Math.floor(bigImg.width/10);
+	nextImg.addEventListener("click", loadNextBigImg);
 	
 	//before big image is loaded loading image is shown
 	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
 	
-	//big image navigation buttons
-	var cancelImgTd = cancelImg.parentNode;
-	cancelImgTd.addEventListener("click", closeBigImg);
+	//is populated during gallery loading
+	var imgs;
+	//map of <img name> -> <next img name>
+	var nextImgs;
+	//map of <img name> -> <prev img name>
+	var prevImgs;
 	///////////////////////////////////////////////////////
 
 	var loadingDescriptor = new Object();
@@ -180,9 +247,22 @@
 	cancelDescriptor.name="cancel.png";
 	cancelDescriptor.next = null;
 	
-	loadingDescriptor.next = cancelDescriptor;
+	var prevImgDescriptor = new Object();
+	prevImgDescriptor.obj=prevImg;
+	prevImgDescriptor.type="image/png";
+	prevImgDescriptor.name="left.png";
+	prevImgDescriptor.next=null;
 	
-	//start initialization
+	var nextImgDescriptor = new Object();
+	nextImgDescriptor.obj=nextImg;
+	nextImgDescriptor.type="image/png";
+	nextImgDescriptor.name="right.png";
+	nextImgDescriptor.next=null;
+	
+	loadingDescriptor.next = cancelDescriptor;
+	cancelDescriptor.next = prevImgDescriptor;
+	prevImgDescriptor.next = nextImgDescriptor;
+	
 	initResourceImage(loadingDescriptor);
 
 </script>
