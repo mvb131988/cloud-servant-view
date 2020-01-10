@@ -14,6 +14,8 @@
 	</parent>
 	
 	<build>
+		<finalName>cloud-servant-view</finalName>
+		
 <!-- with spring boot placeholder escape characters must be @val@ instead of ${val} 		
 https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-working-because-of-spring-boot-dependency 
 -->
