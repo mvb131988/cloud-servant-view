@@ -60,52 +60,82 @@
 		    if (this.readyState == 4 && this.status == 200) {
 		        imgs = JSON.parse(this.responseText);
 		        initImgMaps(imgs); 
-		        loadAll();
+		        loadImg(0,0,0);
 		    }
 		};
 		imgsRequest.send();
 	}
-
-	//Load all images defined by imgs list
-	function loadAll() {
-		//serial number of the current image
-		var index = 0;
-		//serial number of the current row
-		var rowIndex = 0;
-		while(index < imgs.length) {
-			var row = galleryTable.insertRow(rowIndex);
-			//serial number of the cell
-			var cellIndex = 0;
-			while(index < imgs.length && cellIndex < nHc) {
-				var cell = row.insertCell(cellIndex);
-				var img = new Image();
-		  		img.id = imgs[index];
-		  		img.addEventListener("click", bigImage);
-		  		cell.appendChild(img);
-				
-				loadImg(imgs[index]+"");
-				
-				cellIndex++;
-				index++;
-			}
-			rowIndex++;
-		}
-	}
 	
-	//Load single img by its name
-	//imgId is equal to the img name
-	function loadImg(imgId) {
+	//Loads single img, creates img element and inserts it
+	//and then recursively invokes itself to load next image from
+	//the imgs list.
+	function loadImg(index, rowIndex, cellIndex) {
+		if(index == imgs.length) {return;}
+		var imgId = imgs[index];
+	
 		var oReq = new XMLHttpRequest();
 		oReq.open("POST", "/img", true);
 		oReq.responseType = "arraybuffer";
 		oReq.onload = function(oEvent) {
+		  var row = null;
+		  
+		  if(cellIndex == 0) {
+		  	//new row is started
+		  	row = galleryTable.insertRow(rowIndex);
+		  } 
+		  else {row = galleryTable.rows[rowIndex];}
+		  
+		  var cell = row.insertCell(cellIndex);
+		  var img = new Image();
+		  img.id = imgs[index];
+		  
+		  img.addEventListener("click", bigImage);
+		  cell.appendChild(img);
+		  
 		  var blob = new Blob([oReq.response], {type: "image/bmp"});
 		  var objectURL = URL.createObjectURL(blob);
 		  
-		  var img = document.getElementById(imgId);
 		  img.src = objectURL;
+		  
+		  if(cellIndex < nHc-1) {
+		  	//last element
+		  	if(index == imgs.length-1) {
+		  		img.row = row;
+		  		img.cellIndex = cellIndex;
+		  		img.onload  = resizeRow;
+		  	}
+		  	
+		  	loadImg(++index, rowIndex, ++cellIndex);
+		  }
+		  else {
+		    //img.addEventListener("onload", resizeRow);
+		  	//resizeRow(row);
+		  	
+		  	img.row = row;
+		  	img.cellIndex = cellIndex;
+
+		  	img.onload  = resizeRow;
+		  	
+		  	loadImg(++index, ++rowIndex, 0);
+		  }
 		};
+		
 		oReq.send(imgId);
+	}
+	
+	//when a single row is completely filled with the images,
+	//find the minimum height amongst them and change their height
+	//to this minimum value
+	function resizeRow() {
+	  var i;
+	  var min = 2147483647;
+	  for(i=0; i<this.row.cells.length; i++) {
+	  	var h = this.row.cells[i].childNodes[0].height;
+	  	min = min >= h ? h : min;
+	  }
+	  for(i=0; i<this.row.cells.length; i++) {
+	    this.row.cells[i].childNodes[0].height = min;		  
+	  }
 	}
 	
 	//init maps of <img name> -> <next img name>, 
