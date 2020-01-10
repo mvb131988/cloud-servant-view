@@ -77,47 +77,31 @@
 		oReq.open("POST", "/img", true);
 		oReq.responseType = "arraybuffer";
 		oReq.onload = function(oEvent) {
-		  var row = null;
+		  var blob = new Blob([oReq.response], {type: "image/bmp"});
+		  var objectURL = URL.createObjectURL(blob);
 		  
+		  // select or create row		  
+		  var row = null;
 		  if(cellIndex == 0) {
 		  	//new row is started
 		  	row = galleryTable.insertRow(rowIndex);
 		  } 
 		  else {row = galleryTable.rows[rowIndex];}
 		  
-		  var cell = row.insertCell(cellIndex);
+		  // create image object
 		  var img = new Image();
 		  img.id = imgs[index];
-		  
-		  img.addEventListener("click", bigImage);
-		  cell.appendChild(img);
-		  
-		  var blob = new Blob([oReq.response], {type: "image/bmp"});
-		  var objectURL = URL.createObjectURL(blob);
-		  
+		  img.row = row;
+		  img.cellIndex = cellIndex;
+		  img.onload  = cellIndex == nHc-1 || index == imgs.length-1 ? resizeRow : null;
 		  img.src = objectURL;
+		  img.addEventListener("click", bigImage);
 		  
-		  if(cellIndex < nHc-1) {
-		  	//last element
-		  	if(index == imgs.length-1) {
-		  		img.row = row;
-		  		img.cellIndex = cellIndex;
-		  		img.onload  = resizeRow;
-		  	}
-		  	
-		  	loadImg(++index, rowIndex, ++cellIndex);
-		  }
-		  else {
-		    //img.addEventListener("onload", resizeRow);
-		  	//resizeRow(row);
-		  	
-		  	img.row = row;
-		  	img.cellIndex = cellIndex;
-
-		  	img.onload  = resizeRow;
-		  	
-		  	loadImg(++index, ++rowIndex, 0);
-		  }
+		  //create cell and pass control further down the recursion chain			  
+		  var cell = row.insertCell(cellIndex);
+		  cell.appendChild(img);
+		  if(cellIndex < nHc-1) {loadImg(++index, rowIndex, ++cellIndex);}
+		  else {loadImg(++index, ++rowIndex, 0);}
 		};
 		
 		oReq.send(imgId);
