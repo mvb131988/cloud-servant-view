@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
+    <table id="directories" align="center" border="0" cellspacing="5" cellpadding="0"></table>
     <table id="gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
 	<table id="bigImg" align="center" cellspacing="10px">
 		<tr>
@@ -55,10 +56,14 @@
 	//loading of the images itself
 	function initGallery() {
 		var imgsRequest = new XMLHttpRequest();
-		imgsRequest.open("GET", "/list", true);
+		imgsRequest.open("GET", "/list?path="+currentPath, true);
 		imgsRequest.onreadystatechange = function() {
 		    if (this.readyState == 4 && this.status == 200) {
-		        imgs = JSON.parse(this.responseText);
+		        //process dirs
+		        var dirs = JSON.parse(this.responseText).dirs;
+		        initDirectories(dirs);
+		        
+		        imgs = JSON.parse(this.responseText).files;
 		        initImgMaps(imgs); 
 		        loadImg(0,0,0);
 		    }
@@ -104,7 +109,7 @@
 		  else {loadImg(++index, ++rowIndex, 0);}
 		};
 		
-		oReq.send(imgId);
+		oReq.send(currentPath + imgId);
 	}
 	
 	//when a single row is completely filled with the images,
@@ -139,6 +144,66 @@
 	
 	///////////////////////////////////////////////////////
 	
+	/////////////////// Directories list //////////////////
+	//exposes list of existed directories for the current directory.
+	function initDirectories(dirs) {
+		var i = 0;
+		var rowIndex = 0;
+		while(i < dirs.length) {
+			row = dirTable.insertRow(rowIndex);
+			
+			for(var cellIndex = 0; cellIndex<nHc; cellIndex++) {
+				if(i == dirs.length) break;
+				
+				var dirName;
+				//Special case for the first element.
+				//First element is folder back to the previous directory
+				if(cellIndex == 0 && rowIndex == 0) {
+					if(currentPath.localeCompare("/") != 0) {
+						//"back" value
+						dirName = dirs[i]; 
+					} else {
+						i++;
+						dirName = dirs[i];
+					}
+				} else {
+					dirName = dirs[i];
+				}				
+				i++;
+				
+				var a = document.createElement("a");
+				a.innerText = dirName; 
+				a.addEventListener("click", changeDir);
+				
+				var cell = row.insertCell(cellIndex);
+		  		cell.appendChild(a);
+			}
+			rowIndex++;
+		}
+	}
+	
+	//Allows directory navigation. When directory changes, change current path
+	//and dispose gallery and dirs objects
+	function changeDir() {
+		var dirName = this.innerText.toString(); 
+		if(dirName.localeCompare("back") == 0) {
+			//special case of back path (move to parent directory)
+			//calculate path
+			currentPath = currentPath.substring(0, currentPath.lastIndexOf("/"));
+			currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")+1);
+		} else {
+			var pathUnit = this.innerHTML;
+			currentPath += pathUnit + "/";
+		}
+		
+		disposeDirs();
+		disposeImgs();
+		
+		initGallery();
+	}
+	
+	///////////////////////////////////////////////////////
+	
 	/////////////////// Load big image ////////////////////
 	function bigImage() {
 		galleryTable.parentNode.removeChild(galleryTable);
@@ -166,7 +231,7 @@
 		  document.body.removeChild(loadingImgTable.parentNode);
 		  document.body.appendChild(bigImgTable);
 		};
-		oReq.send(bigImgName);
+		oReq.send(currentPath + bigImgName);
 	}
 	
 	function loadNextBigImg() {
@@ -192,6 +257,24 @@
 	function closeBigImg() {
 		bigImgTable.parentNode.removeChild(bigImgTable);
 		document.body.appendChild(galleryTable);
+	}
+	///////////////////////////////////////////////////////
+	
+	////// Dispose imgs/gallery and dirs tables ///////////
+	function disposeDirs() {
+		for (var i = dirTable.rows.length-1; i > -1; i--) {
+    		dirTable.deleteRow(i);
+		}
+	}
+	
+	function disposeImgs() {
+		for (var i = galleryTable.rows.length-1; i > -1; i--) {
+    		galleryTable.deleteRow(i);
+		}
+		
+		imgs = undefined;
+		nextImgs = undefined;
+		prevImgs = undefined;
 	}
 	///////////////////////////////////////////////////////
 	
@@ -222,6 +305,7 @@
 	var loadingImgTable = document.getElementById("loadingImgTable");
 	document.body.removeChild(loadingImgTable.parentNode);
 	loadingImgTable.parentNode.style.marginTop = Math.floor(ih/3) + "px";
+	var dirTable = document.getElementById("directories");
 	
 	var bigImg = findById("bigImg", bigImgTable.getElementsByTagName("img"));
 	bigImg.width = iw-100;
@@ -247,6 +331,8 @@
 	var nextImgs;
 	//map of <img name> -> <prev img name>
 	var prevImgs;
+	
+	var currentPath = "/";
 	///////////////////////////////////////////////////////
 
 	var loadingDescriptor = new Object();

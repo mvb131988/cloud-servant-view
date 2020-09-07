@@ -1,7 +1,6 @@
 package main;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -14,19 +13,17 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 public class MainController {
@@ -39,17 +36,42 @@ public class MainController {
 	
 	private String imgResourcesPathRoot = ResourceBundle.getBundle("app").getString("img-resources-path");
 	
+	/**
+	 * For the current directory return list of structures of the following representation:
+	 * + file name
+	 * + file type (bmp, directory, other(for video file create dedicated icon, relates to
+	 * missing functionality of the jpeg-decoder))
+	 * 
+	 * Add method parameter relative path. If empty then it's root, if not empty build
+	 * the full path relative to the root. 
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	@GetMapping("/list")
-	public @ResponseBody List<String> list() throws IOException {
-		List<String> l0 = allPaths(Paths.get(minPathRoot));
+	public @ResponseBody ListResponse list(@RequestParam("path") String path) throws IOException {
+	  Path p = Paths.get(minPathRoot.toString(), path);
+		List<FileDescriptor> l0 = allPaths(p);
 		
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ObjectMapper mapper = new ObjectMapper();
+//		ByteArrayOutputStream out = new ByteArrayOutputStream();
+//		ObjectMapper mapper = new ObjectMapper();
+//		
+//		mapper.writeValue(out, l0);
+//
+//		final byte[] data = out.toByteArray();
 		
-		mapper.writeValue(out, l0);
+		List<String> files = l0.stream()
+		                       .filter(e -> FileType.FILE.equals(e.getType()))
+		                       .map(e -> e.getName())
+		                       .collect(Collectors.toList());
+		
 
-		final byte[] data = out.toByteArray();
-		return l0;
+    List<String> dirs = l0.stream()
+                          .filter(e -> FileType.DIR.equals(e.getType()))
+                          .map(e -> e.getName())
+                          .collect(Collectors.toList());
+    
+		return new ListResponse(files, dirs);
 	}
 	
 	@GetMapping("/imgs")
@@ -79,19 +101,32 @@ public class MainController {
 		return "gallery";
 	}
 	
-	private List<String> allPaths(Path inputPath) throws IOException {
-		FilesVisitor fv = new FilesVisitor();
+	private List<FileDescriptor> allPaths(Path inputPath) throws IOException {
+		FilesVisitor fv = new FilesVisitor(inputPath);
 		Files.walkFileTree(inputPath, fv);
 		return fv.list;
 	}
 	
 	private static class FilesVisitor implements FileVisitor<Path> {
 
-		private List<String> list = new ArrayList<String>();
+		private List<FileDescriptor> list = new ArrayList<FileDescriptor>();
+		private Path inputPath;
+		
+		public FilesVisitor(Path inputPath) {
+		  this.inputPath = inputPath;
+		  //init with back to parent dir
+		  list.add(new FileDescriptor("back", FileType.DIR));
+    }
 		
 		@Override
 		public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-			return FileVisitResult.CONTINUE;
+		  String fileName = dir.getFileName().toString();
+      if(!dir.equals(inputPath) && fileName.lastIndexOf(".") == -1) {
+        list.add(new FileDescriptor(dir.getFileName().toString(), FileType.DIR));
+        //if directory is found don't visit it
+        return FileVisitResult.SKIP_SUBTREE;
+      }
+		  return FileVisitResult.CONTINUE;
 		}
 
 		@Override
@@ -101,7 +136,7 @@ public class MainController {
 			if(fileName.lastIndexOf(".") != -1) {
 				extension = fileName.substring(fileName.lastIndexOf(".")+1);
 				if(extension.equals("bmp")) {
-					list.add(file.getFileName().toString());
+					list.add(new FileDescriptor(file.getFileName().toString(), FileType.FILE));
 				}
 			}
 			return FileVisitResult.CONTINUE;
@@ -120,10 +155,10 @@ public class MainController {
 	}
 	
 	@PostMapping("/img")
-	public @ResponseBody byte[] getImage(@RequestBody String imgName) throws IOException {
-		logger.info(imgName);
+	public @ResponseBody byte[] getImage(@RequestBody String imgPath) throws IOException {
+		logger.info(imgPath);
 		
-		Path p = Paths.get(minPathRoot).resolve(Paths.get(imgName));
+		Path p = Paths.get(minPathRoot.toString(), imgPath);
 		InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
 		
 		byte[] inarr = new byte[is.available()];
@@ -132,10 +167,10 @@ public class MainController {
 	}
 	
 	@PostMapping("/big-img")
-	public @ResponseBody byte[] getBigImage(@RequestBody String imgName) throws IOException {
-		logger.info(imgName);
+	public @ResponseBody byte[] getBigImage(@RequestBody String imgPath) throws IOException {
+		logger.info(imgPath);
 		
-		Path p = Paths.get(bigPathRoot).resolve(Paths.get(imgName));
+		Path p = Paths.get(bigPathRoot.toString(), imgPath);
 		InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
 		
 		byte[] inarr = new byte[is.available()];
