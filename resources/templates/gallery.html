@@ -51,8 +51,9 @@
 	}
 	///////////////////////////////////////////////////////
 
-	//////////////// gallery //////////////////////////////
-	//Getting list of all images in the gallery as well as triggering 
+	//////////////// gallery + dirs navigation ////////////
+	//Getting list of all images in the gallery together 
+	//with dirs navigation section as well as triggering 
 	//loading of the images itself
 	function initGallery() {
 		var imgsRequest = new XMLHttpRequest();
@@ -171,35 +172,53 @@
 				}				
 				i++;
 				
-				var a = document.createElement("a");
-				a.innerText = dirName; 
-				a.addEventListener("click", changeDir);
+				//<div style="position: relative;">
+				//	<div style="text-align: center;">
+				//		<img src="blob:http://92.115.183.17:53131/6d0a2264-0150-41a7-b865-9d66346a6fcb">
+				//	</div>
+				//	<span>nastia_fotoset_03</span>
+				//</div>
+				
+				var div0 = document.createElement("div");
+				div0.style = "position: relative;"
+				var div1 = document.createElement("div");
+				div1.style = "text-align: center;";
+				var span = document.createElement("span");
+				span.textContent = dirName;
+				
+				div0.appendChild(div1);
+				div0.appendChild(span);
+				
+				var localDirImg = new Image();
+				localDirImg.src = dirImg.src;
+				div1.append(localDirImg);
+				changeDirHandler(div1, dirName);
 				
 				var cell = row.insertCell(cellIndex);
-		  		cell.appendChild(a);
+		  		cell.appendChild(div0);
 			}
 			rowIndex++;
 		}
 	}
 	
-	//Allows directory navigation. When directory changes, change current path
+	//Allows directory navigation(in depth traversal). When directory changes, change current path
 	//and dispose gallery and dirs objects
-	function changeDir() {
-		var dirName = this.innerText.toString(); 
-		if(dirName.localeCompare("back") == 0) {
-			//special case of back path (move to parent directory)
-			//calculate path
-			currentPath = currentPath.substring(0, currentPath.lastIndexOf("/"));
-			currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")+1);
-		} else {
-			var pathUnit = this.innerHTML;
-			currentPath += pathUnit + "/";
-		}
-		
-		disposeDirs();
-		disposeImgs();
-		
-		initGallery();
+	function changeDirHandler(element, dirName) {
+		element.addEventListener('click', function() {
+			if(dirName.localeCompare("back") == 0) {
+				//special case of back path (move to parent directory)
+				//calculate path
+				currentPath = currentPath.substring(0, currentPath.lastIndexOf("/"));
+				currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")+1);
+			} else {
+				currentPath += dirName + "/";
+			}
+			
+			disposeDirs();
+			disposeImgs();
+			
+			initGallery();
+		});
 	}
 	
 	///////////////////////////////////////////////////////
@@ -325,6 +344,9 @@
 	//before big image is loaded loading image is shown
 	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
 	
+	//img object for dir image
+	var dirImg = new Image();
+	
 	//is populated during gallery loading
 	var imgs;
 	//map of <img name> -> <next img name>
@@ -359,9 +381,16 @@
 	nextImgDescriptor.name="right.png";
 	nextImgDescriptor.next=null;
 	
+	var dirImgDescriptor = new Object();
+	dirImgDescriptor.obj=dirImg;
+	dirImgDescriptor.type="image/png";
+	dirImgDescriptor.name="dir.png";
+	dirImgDescriptor.next=null;
+	
 	loadingDescriptor.next = cancelDescriptor;
 	cancelDescriptor.next = prevImgDescriptor;
 	prevImgDescriptor.next = nextImgDescriptor;
+	nextImgDescriptor.next = dirImgDescriptor;
 	
 	initResourceImage(loadingDescriptor);
 
