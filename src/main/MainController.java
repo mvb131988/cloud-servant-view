@@ -170,7 +170,19 @@ public class MainController {
 	public @ResponseBody byte[] getBigImage(@RequestBody String imgPath) throws IOException {
 		logger.info(imgPath);
 		
-		Path p = Paths.get(bigPathRoot.toString(), imgPath);
+		//cut trailing .jpg
+		imgPath = imgPath.substring(0, imgPath.lastIndexOf("."));
+		
+		Path p = null;
+		if(Files.exists(Paths.get(bigPathRoot.toString(), imgPath.concat(".jpg")))) {
+		  p = Paths.get(bigPathRoot.toString(), imgPath.concat(".jpg"));
+		}
+		if(Files.exists(Paths.get(bigPathRoot.toString(), imgPath.concat(".JPG")))) {
+		  p = Paths.get(bigPathRoot.toString(), imgPath.concat(".JPG"));
+    }
+		
+		assert(p != null);
+		
 		InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
 		
 		byte[] inarr = new byte[is.available()];
