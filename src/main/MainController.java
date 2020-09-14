@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
+import javax.servlet.ServletRequest;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
@@ -75,7 +77,7 @@ public class MainController {
 	}
 	
 	@GetMapping("/imgs")
-	public String greeting(Model model) throws IOException {
+	public String greeting(Model model, ServletRequest request) throws IOException {
 		List<List<String>> l = new ArrayList<>();
 		
 		List<String> r1 = new ArrayList<String>();

@@ -94,19 +94,32 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 			<properties>
 				<log>/usr/cloud-servant-view/.logs/</log>
 				<min-path>/media/pi/seagate/repo-min/photo-min/</min-path>
-				<big-path>/media/pi/seagate/repo/photo/2019/zurich_03</big-path>
+				<big-path>/media/pi/seagate/repo/photo</big-path>
 				<img-resources-path>/media/pi/seagate/repo-min/img-resources</img-resources-path>
 			</properties>
 		</profile>
 	</profiles>
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
-		</dependency>
-		<dependency>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-thymeleaf</artifactId>
+	</dependency>
+	<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-web</artifactId>
+		  </dependency>
+	  <dependency>
+		<groupId>org.springframework.security</groupId>
+		<artifactId>spring-security-config</artifactId>
+	  </dependency>
+	  <dependency>
+		<groupId>org.thymeleaf.extras</groupId>
+		<artifactId>thymeleaf-extras-springsecurity4</artifactId>	
+		<version>2.1.2.RELEASE</version>
+	  </dependency>
 	</dependencies>
 </project>
