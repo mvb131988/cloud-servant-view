@@ -5,21 +5,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-
-	<div id="control" style="position:relative; margin-bottom:20px;">
-		<div style="float:left; margin-right:20px;">
-			<form action="/logout" method="post">
-				<input type="submit" value="Logout" style="width: 150px; height: 80px">
-			</form>
-		</div>
-		<div>
-			<input id="share" type="submit" value="Share" style="width: 150px; height: 80px">
-		</div>
-	</div>
-    <div id="share-url" style="position:relative; margin-bottom:20px;">
-	</div>
-    
-    <table id="directories" align="center" border="0" cellspacing="5" cellpadding="0"></table>
     <table id="gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
 	<table id="bigImg" align="center" cellspacing="10px">
 		<tr>
@@ -46,7 +31,7 @@
 	/////////////////// Loading image /////////////////////
 	function initResourceImage(resourceDescriptor) {
 		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/resource-img", true);
+		oReq.open("POST", "/sharing/resource-img", true);
 		oReq.responseType = "arraybuffer";
 		
 		oReq.onload = function(oEvent) {
@@ -71,19 +56,14 @@
 	//loading of the images itself
 	function initGallery() {
 		var imgsRequest = new XMLHttpRequest();
-		imgsRequest.open("GET", "/list?path="+currentPath, true);
+		imgsRequest.open("GET", "/sharing/list", true);
 		imgsRequest.onreadystatechange = function() {
 		    if (this.readyState == 4 && this.status == 200) {
-		        //process dirs
-		        var dirs = JSON.parse(this.responseText).dirs;
-		        initDirectories(dirs);
-		        
-		        //init sharing url
-		        initShareUrl();
-		        
 		        imgs = JSON.parse(this.responseText).files;
-		        initImgMaps(imgs); 
-		        loadImg(0,0,0);
+		        if(imgs) {
+		        	initImgMaps(imgs); 
+		        	loadImg(0,0,0);
+		        }
 		    }
 		};
 		imgsRequest.send();
@@ -97,7 +77,7 @@
 		var imgId = imgs[index];
 	
 		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/img", true);
+		oReq.open("POST", "/sharing/img", true);
 		oReq.responseType = "arraybuffer";
 		oReq.onload = function(oEvent) {
 		  var blob = new Blob([oReq.response], {type: "image/bmp"});
@@ -127,7 +107,7 @@
 		  else {loadImg(++index, ++rowIndex, 0);}
 		};
 		
-		oReq.send(currentPath + imgId);
+		oReq.send(imgId);
 	}
 	
 	//when a single row is completely filled with the images,
@@ -159,88 +139,6 @@
 			prevImgs.set(imgs[i], prev);
 		}
 	}
-	
-	///////////////////////////////////////////////////////
-	
-	/////////////////// Directories list //////////////////
-	//exposes list of existed directories for the current directory.
-	function initDirectories(dirs) {
-		var i = 0;
-		var rowIndex = 0;
-		while(i < dirs.length) {
-			row = dirTable.insertRow(rowIndex);
-			
-			for(var cellIndex = 0; cellIndex<nHc; cellIndex++) {
-				if(i == dirs.length) break;
-				
-				var dirName;
-				//Special case for the first element.
-				//First element is folder back to the previous directory
-				if(cellIndex == 0 && rowIndex == 0) {
-					if(currentPath.localeCompare("/") != 0) {
-						//"back" value
-						dirName = dirs[i]; 
-					} else {
-						i++;
-						dirName = dirs[i];
-					}
-				} else {
-					dirName = dirs[i];
-				}				
-				i++;
-				
-				//<div style="position: relative;">
-				//	<div style="text-align: center;">
-				//		<img src="blob:http://92.115.183.17:53131/6d0a2264-0150-41a7-b865-9d66346a6fcb">
-				//	</div>
-				//	<span>nastia_fotoset_03</span>
-				//</div>
-				
-				var div0 = document.createElement("div");
-				div0.style = "position: relative;"
-				var div1 = document.createElement("div");
-				div1.style = "text-align: center;";
-				var span = document.createElement("span");
-				span.textContent = dirName;
-				
-				div0.appendChild(div1);
-				div0.appendChild(span);
-				
-				var localDirImg = new Image();
-				localDirImg.src = dirImg.src;
-				div1.append(localDirImg);
-				changeDirHandler(div1, dirName);
-				
-				var cell = row.insertCell(cellIndex);
-		  		cell.appendChild(div0);
-			}
-			rowIndex++;
-		}
-	}
-	
-	//Allows directory navigation(in depth traversal). When directory changes, change current path
-	//and dispose gallery and dirs objects
-	function changeDirHandler(element, dirName) {
-		element.addEventListener('click', function() {
-			if(dirName.localeCompare("back") == 0) {
-				//special case of back path (move to parent directory)
-				//calculate path
-				currentPath = currentPath.substring(0, currentPath.lastIndexOf("/"));
-				currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")+1);
-			} else {
-				currentPath += dirName + "/";
-			}
-			
-			disposeDirs();
-			disposeImgs();
-			
-			//remove sharing url
-			shareUrlDiv.innerHTML = "";
-			
-			initGallery();
-		});
-	}
-	
 	///////////////////////////////////////////////////////
 	
 	/////////////////// Load big image ////////////////////
@@ -258,7 +156,7 @@
 		var bigImgName = imgName.substring(0,imgName.indexOf(".")) + ".jpg";
 	
 		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/big-img", true);
+		oReq.open("POST", "/sharing/big-img", true);
 		oReq.responseType = "arraybuffer";
 		
 		oReq.onload = function(oEvent) {
@@ -270,7 +168,7 @@
 		  document.body.removeChild(loadingImgTable.parentNode);
 		  document.body.appendChild(bigImgTable);
 		};
-		oReq.send(currentPath + bigImgName);
+		oReq.send(bigImgName);
 	}
 	
 	function loadNextBigImg() {
@@ -299,24 +197,6 @@
 	}
 	///////////////////////////////////////////////////////
 	
-	////// Dispose imgs/gallery and dirs tables ///////////
-	function disposeDirs() {
-		for (var i = dirTable.rows.length-1; i > -1; i--) {
-    		dirTable.deleteRow(i);
-		}
-	}
-	
-	function disposeImgs() {
-		for (var i = galleryTable.rows.length-1; i > -1; i--) {
-    		galleryTable.deleteRow(i);
-		}
-		
-		imgs = undefined;
-		nextImgs = undefined;
-		prevImgs = undefined;
-	}
-	///////////////////////////////////////////////////////
-	
 	/////////////////// Helpers  //////////////////////////
 	function findById(id, elements) {
 		var i;
@@ -325,32 +205,6 @@
 		}
 		return null;
 	}
-	///////////////////////////////////////////////////////
-	
-	/////////////////// Share functions  //////////////////
-	function shareLinkContext(shareButton, shareUrlDiv) {
-		shareButton.addEventListener("click", function(){
-		
-			var oReq = new XMLHttpRequest();
-			oReq.open("POST", "/sharing/create", true);
-			oReq.onload = function(oEvent) {
-				var id = oReq.responseText;
-				shareUrlDiv.innerHTML = 'Sharing url: ' + 'sharing/imgs?path-id=' + id;
-			};
-			oReq.send(currentPath);
-		
-		});
-	}	
-	
-	function initShareUrl() {
-		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/sharing/get", true);
-		oReq.onload = function(oEvent) {
-			var id = oReq.responseText;
-			if(id) shareUrlDiv.innerHTML = 'Sharing url: ' + 'sharing/imgs?path-id=' + id;
-		};
-		oReq.send(currentPath);
-	}	
 	///////////////////////////////////////////////////////
 	
 	/////////////////// global  space /////////////////////
@@ -370,8 +224,6 @@
 	var loadingImgTable = document.getElementById("loadingImgTable");
 	document.body.removeChild(loadingImgTable.parentNode);
 	loadingImgTable.parentNode.style.marginTop = Math.floor(ih/3) + "px";
-	var dirTable = document.getElementById("directories");
-	var controlDiv = document.getElementById("control");
 	
 	var bigImg = findById("bigImg", bigImgTable.getElementsByTagName("img"));
 	bigImg.width = iw-100;
@@ -391,23 +243,12 @@
 	//before big image is loaded loading image is shown
 	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
 	
-	//share button
-	var shareButton = findById("share", controlDiv.getElementsByTagName("input"));
-	//share url
-	var shareUrlDiv = document.getElementById("share-url");
-	shareLinkContext(shareButton, shareUrlDiv);
-	
-	//img object for dir image
-	var dirImg = new Image();
-	
 	//is populated during gallery loading
 	var imgs;
 	//map of <img name> -> <next img name>
 	var nextImgs;
 	//map of <img name> -> <prev img name>
 	var prevImgs;
-	
-	var currentPath = "/";
 	///////////////////////////////////////////////////////
 
 	var loadingDescriptor = new Object();
@@ -434,16 +275,9 @@
 	nextImgDescriptor.name="right.png";
 	nextImgDescriptor.next=null;
 	
-	var dirImgDescriptor = new Object();
-	dirImgDescriptor.obj=dirImg;
-	dirImgDescriptor.type="image/png";
-	dirImgDescriptor.name="dir.png";
-	dirImgDescriptor.next=null;
-	
 	loadingDescriptor.next = cancelDescriptor;
 	cancelDescriptor.next = prevImgDescriptor;
 	prevImgDescriptor.next = nextImgDescriptor;
-	nextImgDescriptor.next = dirImgDescriptor;
 	
 	initResourceImage(loadingDescriptor);
 
