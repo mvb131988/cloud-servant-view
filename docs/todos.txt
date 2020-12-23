@@ -1,0 +1,2 @@
+(1) Default images for files that don't have min-image
+(2) Change period for sharing url
