@@ -1,14 +1,13 @@
- java -jar -Xmx128m cloud-servant-view-0.0.1-SNAPSHOT.jar
- 
  ssh pi@192.168.0.13 -p 51313
  
+ build for env: 
+ mvn clean install -Penv
+ 
  deploy to: /usr/cloud-servant-view
- 
- mkdir /usr/cloud-servant-view
- sudo chown -R pi:1000 /usr/cloud-servant-view
- 
- scp -P 51313 cloud-servant-view.jar pi@92.115.183.17:/usr/cloud-servant-view
- nohup java -jar -Xmx128m -Dname=cloud-servant-view cloud-servant-view.jar >/dev/null &
+ (1) mkdir /usr/cloud-servant-view
+ (2) sudo chown -R pi:1000 /usr/cloud-servant-view
+ (3) scp -P 51313 cloud-servant-view.jar pi@92.115.183.17:/usr/cloud-servant-view
+ (4) nohup java -jar -Xmx128m -Dname=cloud-servant-view cloud-servant-view.jar >/dev/null &	
  
  ########################################################################################
  Copy resource images

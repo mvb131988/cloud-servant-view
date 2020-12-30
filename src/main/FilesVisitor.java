@@ -21,8 +21,7 @@ public class FilesVisitor implements FileVisitor<Path> {
   
   @Override
   public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-    String fileName = dir.getFileName().toString();
-    if(!dir.equals(inputPath) && fileName.lastIndexOf(".") == -1) {
+    if(!dir.equals(inputPath)) {
       list.add(new FileDescriptor(dir.getFileName().toString(), FileType.DIR));
       //if directory is found don't visit it
       return FileVisitResult.SKIP_SUBTREE;

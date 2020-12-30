@@ -47,7 +47,7 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<finalName>cloud-servant</finalName>
+					<finalName>cloud-servant-view</finalName>
 					<archive>
 						<manifest>
 							<mainClass>main.Main</mainClass>
