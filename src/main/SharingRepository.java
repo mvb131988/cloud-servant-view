@@ -30,7 +30,7 @@ public class SharingRepository {
   
   //TODO: move to config
   //in millis
-  private final Long liveTime = 2*60*1000l; 
+  private final Long liveTime = 7*24*60*60*1000l; 
   
   @PostConstruct
   public void init() {
