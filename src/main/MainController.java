@@ -46,8 +46,8 @@ public class MainController {
 	 * @return
 	 * @throws IOException
 	 */
-	@GetMapping("/list")
-	public @ResponseBody ListResponse list(@RequestParam("path") String path) throws IOException {
+	@PostMapping("/list")
+	public @ResponseBody ListResponse list(@RequestBody String path) throws IOException {
 	  Path p = Paths.get(minPathRoot.toString(), path);
 		List<FileDescriptor> l0 = allPaths(p);
 		

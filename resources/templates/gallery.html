@@ -71,7 +71,7 @@
 	//loading of the images itself
 	function initGallery() {
 		var imgsRequest = new XMLHttpRequest();
-		imgsRequest.open("GET", "/list?path="+currentPath, true);
+		imgsRequest.open("POST", "/list", true);
 		imgsRequest.onreadystatechange = function() {
 		    if (this.readyState == 4 && this.status == 200) {
 		        //process dirs
@@ -86,7 +86,7 @@
 		        loadImg(0,0,0);
 		    }
 		};
-		imgsRequest.send();
+		imgsRequest.send(currentPath);
 	}
 	
 	//Loads single img, creates img element and inserts it
