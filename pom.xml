@@ -13,6 +13,11 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	
+	<properties>
+<!--     	<junit.version>4.13</junit.version> -->
+    	<jdk.version>1.8</jdk.version>
+    </properties>
+	
 	<build>
 		<finalName>cloud-servant-view</finalName>
 		
@@ -20,12 +25,18 @@
 https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-working-because-of-spring-boot-dependency 
 -->
 		<sourceDirectory>src</sourceDirectory>
+		<testSourceDirectory>test</testSourceDirectory>
 		<resources>
 			<resource>
 				<directory>resources</directory>
 				<filtering>true</filtering>
 			</resource>
 		</resources>
+		<testResources>
+			<testResource>
+				<directory>test-resources</directory>
+			</testResource>
+		</testResources>
 		<plugins>
 			<!-- download source code in Eclipse, best practice -->
 			<plugin>
@@ -39,9 +50,10 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
 				<configuration>
-					<source>8</source>
-					<target>8</target>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -67,6 +79,7 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 				<!-- Build an executable JAR -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.1.0</version>
 				<configuration>
 					<archive>
 						<manifest>
@@ -100,26 +113,37 @@ https://stackoverflow.com/questions/36501017/maven-resource-filtering-not-workin
 		</profile>
 	</profiles>
 	<dependencies>
-	<dependency>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-thymeleaf</artifactId>
-	</dependency>
-	<dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
-		  </dependency>
-	  <dependency>
-		<groupId>org.springframework.security</groupId>
-		<artifactId>spring-security-config</artifactId>
-	  </dependency>
-	  <dependency>
-		<groupId>org.thymeleaf.extras</groupId>
-		<artifactId>thymeleaf-extras-springsecurity4</artifactId>	
-		<version>2.1.2.RELEASE</version>
-	  </dependency>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.thymeleaf.extras</groupId>
+			<artifactId>thymeleaf-extras-springsecurity4</artifactId>
+			<version>2.1.2.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>3.0.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

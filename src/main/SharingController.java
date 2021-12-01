@@ -44,28 +44,38 @@ public class SharingController {
   
   @GetMapping("/sharing/list")
   public @ResponseBody ListResponse list(@CookieValue("path-id") String pathId) throws IOException {
-    ListResponse response = new ListResponse(null, null);
+    ListResponse response = new ListResponse(null, null, null, null);
     
     //find a value(dir relative path) for the corresponding path-id
     String path = shareRepository.getPath(pathId);
     if(path != null) {
-      String dirRelativePath = path;
-      Path dirPath = Paths.get(minPathRoot.toString(), dirRelativePath);
-      List<FileDescriptor> l0 = allPaths(dirPath);
+      List<FileDescriptor> l0 = allPaths(Paths.get(minPathRoot), Paths.get(bigPathRoot));
       
-      List<String> files = l0.stream()
-          .filter(e -> FileType.FILE.equals(e.getType()))
+      List<String> bmps = l0.stream()
+          .filter(e -> FileType.BMP.equals(e.getType()))
           .map(e -> e.getName())
           .collect(Collectors.toList());
       
-      response.setFiles(files);
+      List<String> jpgs = l0.stream()
+          .filter(e -> FileType.JPG.equals(e.getType()))
+          .map(e -> e.getName())
+          .collect(Collectors.toList());
+      
+      List<String> others = l0.stream()
+          .filter(e -> FileType.OTHER.equals(e.getType()))
+          .map(e -> e.getName())
+          .collect(Collectors.toList());
+      
+      response.setBmps(bmps);
+      response.setJpgs(jpgs);
+      response.setOthers(others);
     }
     return response;
   }
   
-  private List<FileDescriptor> allPaths(Path inputPath) throws IOException {
-    FilesVisitor fv = new FilesVisitor(inputPath);
-    Files.walkFileTree(inputPath, fv);
+  private List<FileDescriptor> allPaths(Path minPathRoot, Path bigPathRoot) throws IOException {
+    FilesVisitor fv = new FilesVisitor(minPathRoot, bigPathRoot);
+    Files.walkFileTree(bigPathRoot, fv);
     return fv.getList();
   }
   

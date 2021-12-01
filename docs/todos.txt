@@ -1,5 +1,5 @@
-(1) Default images for files that don't have min-image
+ (1) Default images for files that don't have min-image
 	Two-types: jpeg, non-jpeg
-(2) Change period for sharing url
+(2) Change period for sharing url [DONE]
 (3) close files after read is completed [DONE]
 (4) move logs location to repo-min .log

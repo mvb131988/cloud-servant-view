@@ -15,12 +15,12 @@ import javax.servlet.ServletRequest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
@@ -33,6 +33,9 @@ public class MainController {
 	private String bigPathRoot = ResourceBundle.getBundle("app").getString("big-path");
 	
 	private String imgResourcesPathRoot = ResourceBundle.getBundle("app").getString("img-resources-path");
+	
+	@Autowired
+	private FileManager fm;
 	
 	/**
 	 * For the current directory return list of structures of the following representation:
@@ -47,28 +50,34 @@ public class MainController {
 	 * @throws IOException
 	 */
 	@PostMapping("/list")
-	public @ResponseBody ListResponse list(@RequestBody String path) throws IOException {
-	  Path p = Paths.get(minPathRoot.toString(), path);
-		List<FileDescriptor> l0 = allPaths(p);
+	public @ResponseBody ListResponse list(@RequestBody String path) throws IOException {	  
+	  Path minPath = Paths.get(minPathRoot.toString(), path);
+	  Path bigPath = Paths.get(bigPathRoot.toString(), path);
 		
-		List<String> files = l0.stream()
-		                       .filter(e -> FileType.FILE.equals(e.getType()))
-		                       .map(e -> e.getName())
-		                       .collect(Collectors.toList());
+	  List<FileDescriptor> l0 = fm.allPaths(minPath, bigPath);
+		
+		List<String> bmps = l0.stream()
+		                      .filter(e -> FileType.BMP.equals(e.getType()))
+		                      .map(e -> e.getName())
+		                      .collect(Collectors.toList());
+		
+		List<String> jpgs = l0.stream()
+                          .filter(e -> FileType.JPG.equals(e.getType()))
+                          .map(e -> e.getName())
+                          .collect(Collectors.toList());
+
+		List<String> others = l0.stream()
+                            .filter(e -> FileType.OTHER.equals(e.getType()))
+                            .map(e -> e.getName())
+                            .collect(Collectors.toList());
 		
     List<String> dirs = l0.stream()
                           .filter(e -> FileType.DIR.equals(e.getType()))
                           .map(e -> e.getName())
                           .collect(Collectors.toList());
     
-		return new ListResponse(files, dirs);
+		return new ListResponse(bmps, jpgs, others, dirs);
 	}
-	
-	private List<FileDescriptor> allPaths(Path inputPath) throws IOException {
-    FilesVisitor fv = new FilesVisitor(inputPath);
-    Files.walkFileTree(inputPath, fv);
-    return fv.getList();
-  }
 	
 	@GetMapping("/imgs")
 	public String greeting(Model model, ServletRequest request) throws IOException {
@@ -124,5 +133,17 @@ public class MainController {
 		}
 		return inarr;
 	}
+
+  public void setFm(FileManager fm) {
+    this.fm = fm;
+  }
+
+  public void setMinPathRoot(String minPathRoot) {
+    this.minPathRoot = minPathRoot;
+  }
+
+  public void setBigPathRoot(String bigPathRoot) {
+    this.bigPathRoot = bigPathRoot;
+  }
 	
 }

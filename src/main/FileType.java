@@ -2,8 +2,10 @@ package main;
 
 public enum FileType {
   
-  FILE(0),
-  DIR(1);
+  BMP(0),
+  JPG(1),
+  OTHER(2),
+  DIR(3);
   
   private int type;
   
