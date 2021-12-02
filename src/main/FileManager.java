@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class FileManager {
 
   public List<FileDescriptor> allPaths(Path minPath, Path bigPath) throws IOException {
-    FilesVisitor fv = new FilesVisitor(bigPath, minPath);
+    FilesVisitor fv = new FilesVisitor(minPath, bigPath);
     Files.walkFileTree(bigPath, fv);
     return fv.getList();
   }

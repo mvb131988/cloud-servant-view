@@ -20,7 +20,8 @@
 	</div>
     
     <table id="directories" align="center" border="0" cellspacing="5" cellpadding="0"></table>
-    <table id="gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
+    <table id="bmp-gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
+    <table id="jpg-gallery" align="center" border="1" cellspacing="5" cellpadding="0"></table>
 	<table id="bigImg" align="center" cellspacing="10px">
 		<tr>
 			<td align="right">
@@ -40,6 +41,7 @@
 			</tr>
 		</table>
 	</div>
+	<img id="jpgIconImg"></img>
 </body>
 
 <script>
@@ -58,18 +60,18 @@
 		  if(resourceDescriptor.next != null) {
 		  	initResourceImage(resourceDescriptor.next);
 		  } else {
-		  	initGallery();
+		  	initBmpGallery();
 		  }
 		};
 		oReq.send(resourceDescriptor.name);
 	}
 	///////////////////////////////////////////////////////
 
-	//////////////// gallery + dirs navigation ////////////
-	//Getting list of all images in the gallery together 
+	//////////////// bmp-gallery + dirs navigation ////////////
+	//Getting list of all images in the bmp-gallery together 
 	//with dirs navigation section as well as triggering 
 	//loading of the images itself
-	function initGallery() {
+	function initBmpGallery() {
 		var imgsRequest = new XMLHttpRequest();
 		imgsRequest.open("POST", "/list", true);
 		imgsRequest.onreadystatechange = function() {
@@ -81,9 +83,14 @@
 		        //init sharing url
 		        initShareUrl();
 		        
-		        imgs = JSON.parse(this.responseText).files;
-		        initImgMaps(imgs); 
-		        loadImg(0,0,0);
+		        //init images
+		        bmpImgs = new Array();
+		        
+		        var bmps = JSON.parse(this.responseText).bmps;
+		        bmpImgs = bmpImgs.concat(bmps);
+		        
+		        initImgMaps(bmpImgs); 
+		        loadBmpImg(0,0,0);
 		    }
 		};
 		imgsRequest.send(currentPath);
@@ -91,10 +98,10 @@
 	
 	//Loads single img, creates img element and inserts it
 	//and then recursively invokes itself to load next image from
-	//the imgs list.
-	function loadImg(index, rowIndex, cellIndex) {
-		if(index == imgs.length) {return;}
-		var imgId = imgs[index];
+	//the bmp-imgs list.
+	function loadBmpImg(index, rowIndex, cellIndex) {
+		if(index == bmpImgs.length) {return;}
+		var imgId = bmpImgs[index];
 	
 		var oReq = new XMLHttpRequest();
 		oReq.open("POST", "/img", true);
@@ -107,24 +114,24 @@
 		  var row = null;
 		  if(cellIndex == 0) {
 		  	//new row is started
-		  	row = galleryTable.insertRow(rowIndex);
+		  	row = bmpGalleryTable.insertRow(rowIndex);
 		  } 
-		  else {row = galleryTable.rows[rowIndex];}
+		  else {row = bmpGalleryTable.rows[rowIndex];}
 		  
 		  // create image object
 		  var img = new Image();
-		  img.id = imgs[index];
+		  img.id = bmpImgs[index];
 		  img.row = row;
 		  img.cellIndex = cellIndex;
-		  img.onload  = cellIndex == nHc-1 || index == imgs.length-1 ? resizeRow : null;
+		  img.onload  = cellIndex == nHc-1 || index == bmpImgs.length-1 ? resizeRow : null;
 		  img.src = objectURL;
 		  img.addEventListener("click", bigImage);
 		  
 		  //create cell and pass control further down the recursion chain			  
 		  var cell = row.insertCell(cellIndex);
 		  cell.appendChild(img);
-		  if(cellIndex < nHc-1) {loadImg(++index, rowIndex, ++cellIndex);}
-		  else {loadImg(++index, ++rowIndex, 0);}
+		  if(cellIndex < nHc-1) {loadBmpImg(++index, rowIndex, ++cellIndex);}
+		  else {loadBmpImg(++index, ++rowIndex, 0);}
 		};
 		
 		oReq.send(currentPath + imgId);
@@ -145,18 +152,19 @@
 	  }
 	}
 	
+	//TODO: parameterize to include .jpg case here
 	//init maps of <img name> -> <next img name>, 
 	//			   <img name> -> <prev img name>
 	function initImgMaps(imgs) {
-		nextImgs = new Map();
-		prevImgs = new Map();
+		bmpNextImgs = new Map();
+		bmpPrevImgs = new Map();
 		
 		var i;
 		for(i=0; i<imgs.length; i++) {
 			var next = i < imgs.length - 1 ? imgs[i+1] : null;
-			nextImgs.set(imgs[i], next);
+			bmpNextImgs.set(imgs[i], next);
 			var prev = i > 0 ? imgs[i-1] : null;
-			prevImgs.set(imgs[i], prev);
+			bmpPrevImgs.set(imgs[i], prev);
 		}
 	}
 	
@@ -219,7 +227,7 @@
 	}
 	
 	//Allows directory navigation(in depth traversal). When directory changes, change current path
-	//and dispose gallery and dirs objects
+	//and dispose bmp-gallery and dirs objects
 	function changeDirHandler(element, dirName) {
 		element.addEventListener('click', function() {
 			if(dirName.localeCompare("back") == 0) {
@@ -232,12 +240,13 @@
 			}
 			
 			disposeDirs();
-			disposeImgs();
+			disposeBmpImgs();
+			//TODO: dispose bmp-gallery and jpg-gallery
 			
 			//remove sharing url
 			shareUrlDiv.innerHTML = "";
 			
-			initGallery();
+			initBmpGallery();
 		});
 	}
 	
@@ -245,7 +254,7 @@
 	
 	/////////////////// Load big image ////////////////////
 	function bigImage() {
-		galleryTable.parentNode.removeChild(galleryTable);
+		bmpGalleryTable.parentNode.removeChild(bmpGalleryTable);
 				
 		document.body.appendChild(loadingImgTable.parentNode);
 		
@@ -274,7 +283,7 @@
 	}
 	
 	function loadNextBigImg() {
-		var next = nextImgs.get(bigImg.name + ".bmp");
+		var next = bmpNextImgs.get(bigImg.name + ".bmp");
 		if(next != null) {
 			bigImgTable.parentNode.removeChild(bigImgTable);
 			document.body.appendChild(loadingImgTable.parentNode);
@@ -283,7 +292,7 @@
 	}
 	
 	function loadPrevBigImg() {
-		var prev = prevImgs.get(bigImg.name + ".bmp");
+		var prev = bmpPrevImgs.get(bigImg.name + ".bmp");
 		if(prev != null) {
 			bigImgTable.parentNode.removeChild(bigImgTable);
 			document.body.appendChild(loadingImgTable.parentNode);
@@ -295,25 +304,26 @@
 	/////////////////// Cancel button /////////////////////
 	function closeBigImg() {
 		bigImgTable.parentNode.removeChild(bigImgTable);
-		document.body.appendChild(galleryTable);
+		document.body.appendChild(bmpGalleryTable);
 	}
 	///////////////////////////////////////////////////////
 	
-	////// Dispose imgs/gallery and dirs tables ///////////
+	////// Dispose bmp-gallery and dirs tables ///////////
 	function disposeDirs() {
 		for (var i = dirTable.rows.length-1; i > -1; i--) {
     		dirTable.deleteRow(i);
 		}
 	}
 	
-	function disposeImgs() {
-		for (var i = galleryTable.rows.length-1; i > -1; i--) {
-    		galleryTable.deleteRow(i);
+	//TODO: is it possible to parameterize to include .jpg case
+	function disposeBmpImgs() {
+		for (var i = bmpGalleryTable.rows.length-1; i > -1; i--) {
+    		bmpGalleryTable.deleteRow(i);
 		}
 		
-		imgs = undefined;
-		nextImgs = undefined;
-		prevImgs = undefined;
+		bmpImgs = undefined;
+		bmpNextImgs = undefined;
+		bmpPrevImgs = undefined;
 	}
 	///////////////////////////////////////////////////////
 	
@@ -356,7 +366,7 @@
 	/////////////////// global  space /////////////////////
 	var iw = window.innerWidth;
 	var ih = window.innerHeight;
-	//number of horizontal cells in gallery table
+	//number of horizontal cells in bmp-gallery table
 	var nHc = Math.floor(iw/200);
 	
 	//consider table cellspacing
@@ -364,7 +374,10 @@
 		nHc--;
 	} 
 	
-	var galleryTable = document.getElementById("gallery");
+	var bmpGalleryTable = document.getElementById("bmp-gallery");
+	// table for unprocessed(no paired .bmp image) .jpg images
+	var jpgGalleryTable = document.getElementById("jpg-gallery");
+	
 	var bigImgTable = document.getElementById("bigImg");
 	document.body.removeChild(bigImgTable);
 	var loadingImgTable = document.getElementById("loadingImgTable");
@@ -388,6 +401,9 @@
 	nextImg.width = Math.floor(bigImg.width/10);
 	nextImg.addEventListener("click", loadNextBigImg);
 	
+	var jpgIconImg = document.getElementById("jpgIconImg");
+	document.body.removeChild(jpgIconImg);
+	
 	//before big image is loaded loading image is shown
 	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
 	
@@ -400,12 +416,15 @@
 	//img object for dir image
 	var dirImg = new Image();
 	
-	//is populated during gallery loading
-	var imgs;
+	//is populated during bmp-gallery loading.
+	var bmpImgs;
+	
+	//Both maps contain .jpg image names and they are used in case when
+	//.jpg has paired .bmp image
 	//map of <img name> -> <next img name>
-	var nextImgs;
+	var bmpNextImgs;
 	//map of <img name> -> <prev img name>
-	var prevImgs;
+	var bmpPrevImgs;
 	
 	var currentPath = "/";
 	///////////////////////////////////////////////////////
@@ -439,11 +458,18 @@
 	dirImgDescriptor.type="image/png";
 	dirImgDescriptor.name="dir.png";
 	dirImgDescriptor.next=null;
-	
+
+	var jpegIconImgDescriptor = new Object();
+	jpegIconImgDescriptor.obj=jpgIconImg;
+	jpegIconImgDescriptor.type="image/png";
+	jpegIconImgDescriptor.name="jpeg-icon.png";
+	jpegIconImgDescriptor.next=null;
+
 	loadingDescriptor.next = cancelDescriptor;
 	cancelDescriptor.next = prevImgDescriptor;
 	prevImgDescriptor.next = nextImgDescriptor;
 	nextImgDescriptor.next = dirImgDescriptor;
+	dirImgDescriptor.next = jpegIconImgDescriptor;
 	
 	initResourceImage(loadingDescriptor);
 
