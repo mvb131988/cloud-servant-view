@@ -25,7 +25,7 @@
     	   style="margin-top: 30px;"></table>
 	<table id="bigImgTable" align="center" cellspacing="10px">
 		<tr>
-			<td align="right">
+			<td align="center">
 				<img id="prevImg"></img>
 				<img id="nextImg"></img>
 				<img id="cancelImg"></img>
@@ -294,7 +294,10 @@
 	
 	///////////////////////////////////////////////////////
 	
-	/////////////////// Directories list //////////////////
+	/////////////////// Directories list ///////////////////////////
+	// Directory control (initialization + events handling + disposal) 
+	////////////////////////////////////////////////////////////////
+	
 	//exposes list of existed directories for the current directory.
 	function initDirectories(dirs, bigImageControl) {
 		var i = 0;
@@ -374,15 +377,14 @@
 		});
 	}
 	
-	///////////////////////////////////////////////////////
-	
-	////// Dispose bmp-gallery and dirs tables ///////////
+	//Dispose dir table
 	function disposeDirs() {
 		for (var i = dirTable.rows.length-1; i > -1; i--) {
     		dirTable.deleteRow(i);
 		}
 	}
 	
+	//Dispose gallery tables (bmp, jpg galleries)
 	function disposeGalleryTable(galleryTable) {
 		for (var i = galleryTable.rows.length-1; i > -1; i--) {
     		galleryTable.deleteRow(i);
@@ -428,10 +430,22 @@
 	
 	/////////////////// big image control  ////////////////
 	
-	function BigImageControl(bmpGalleryTable, jpgGalleryTable, ih) {
+	function BigImageControl(bmpGalleryTable, 
+							 jpgGalleryTable, 
+							 dirTable,
+							 controlDiv,
+							 iw,
+							 ih) 
+	{
 		
 		//current small img object
 		var currentSmallImg = null;
+		
+		var bigImageWidth = iw-100;
+		var bigImageHeight = ih - bigImageWidth/10 - 100;
+		var cancelImgWidth = bigImageWidth/10;
+		var nextImgWidth = bigImageWidth/10;
+		var prevImgWidth = bigImageWidth/10;
 		
 		//loading/progress image container
 		var loadingImgTable = document.getElementById("loadingImgTable");
@@ -447,22 +461,60 @@
 		
 		//bigImg object
 		var bigImg = findById("bigImg", bigImgTable.getElementsByTagName("img"));
-		bigImg.width = iw-100;
+		
+		//width is defined on page loading, height must be recalculated based on 
+		//current image width. Implementation contains redundant width oversize branch.
+		//Keep it as it suits the general case. 
+		bigImg.onload = function() {
+			var w = this.width;
+			var h = this.height;
+			
+			if(w > bigImageWidth) {
+				wRation = w/bigImageWidth;
+				w = bigImageWidth;
+				h = h/wRatio;
+				if(h > bigImageHeight) {
+					hRation = h/bigImageHeight;
+					h = bigImageHeight;
+					w = w/hRation;
+				}
+			}
+			if(h > bigImageHeight) {
+				hRation = h/bigImageHeight;
+				h = bigImageHeight;
+				w = w/hRation;
+				if(w > bigImageWidth) {
+					wRation = w/bigImageWidth;
+					w = bigImageWidth;
+					h = h/wRatio;
+				}
+			}
+			
+			this.width = w;
+			this.height = h;
+		} 
 		
 		//cancel button(cancelImg) on click handler
 		var closeBigImgClickHandler = function() {
 			bigImgTable.parentNode.removeChild(bigImgTable);
+			document.body.appendChild(controlDiv);
+			document.body.appendChild(dirTable);
 			document.body.appendChild(bmpGalleryTable);
 			document.body.appendChild(jpgGalleryTable);
 		}
 		
 		//loading cancel button object
 		this.cancelImg = findById("cancelImg", bigImgTable.getElementsByTagName("img"));
-		this.cancelImg.width = Math.floor(bigImg.width/10);
+		this.cancelImg.width = Math.floor(cancelImgWidth);
 		this.cancelImg.addEventListener("click", closeBigImgClickHandler);
 	
 		//Loads big .jpg image by small image(.bmp) name		
 		var loadBigImage = function(smallImgName) {
+			//reset to screen width
+			bigImg.width = bigImageWidth;
+			//remove height to allow height auto scaling
+			bigImg.removeAttribute('height');
+			
 			//replace bmp extension to jpg
 			var bigImgName = smallImgName.substring(0,smallImgName.indexOf(".")) + ".jpg";
 		
@@ -476,6 +528,7 @@
 			  
 			  bigImg.src = objectURL;
 			  bigImg.name = smallImgName.substring(0,smallImgName.indexOf("."));
+			   
 			  document.body.removeChild(loadingImgTable.parentNode);
 			  document.body.appendChild(bigImgTable);
 			};
@@ -495,7 +548,7 @@
 		
 		//loading nextImg button object
 		this.nextImg = findById("nextImg", bigImgTable.getElementsByTagName("img"));
-		this.nextImg.width = Math.floor(bigImg.width/10);
+		this.nextImg.width = Math.floor(nextImgWidth);
 		this.nextImg.addEventListener("click", loadNextBigImgClickHandler);
 		
 		//prev button on click handler
@@ -511,13 +564,15 @@
 		
 		//loading prevImg button object
 		this.prevImg = findById("prevImg", bigImgTable.getElementsByTagName("img"));
-		this.prevImg.width = Math.floor(bigImg.width/10);
+		this.prevImg.width = Math.floor(prevImgWidth);
 		this.prevImg.addEventListener("click", loadPrevBigImgClickHandler);
 			
 		//Sets currently chosen image. Prev and next navigation is carried out based
 		//on this value				
 		this.smallImageClickHandler = function() {
 			currentSmallImg = this;
+			controlDiv.parentNode.removeChild(controlDiv);
+			dirTable.parentNode.removeChild(dirTable);
 			bmpGalleryTable.parentNode.removeChild(bmpGalleryTable);
 			jpgGalleryTable.parentNode.removeChild(jpgGalleryTable);
 			document.body.appendChild(loadingImgTable.parentNode);
@@ -547,11 +602,16 @@
 	var dirTable = document.getElementById("directories");
 	var controlDiv = document.getElementById("control");
 	
+	var bigImageControl = new BigImageControl(bmpGalleryTable, 
+											  jpgGalleryTable, 
+											  dirTable,
+											  controlDiv,
+											  iw,
+											  ih);
+	
 	// common img for all unprocessed .jpg images
 	var jpgIconImg = document.getElementById("jpgIconImg");
 	document.body.removeChild(jpgIconImg);
-	
-	var bigImageControl = new BigImageControl(bmpGalleryTable, jpgGalleryTable, ih);
 	
 	//share button
 	var shareButton = findById("share", controlDiv.getElementsByTagName("input"));
