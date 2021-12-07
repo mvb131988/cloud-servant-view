@@ -21,7 +21,8 @@
     
     <table id="directories" align="center" border="0" cellspacing="5" cellpadding="0"></table>
     <table id="bmp-gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
-    <table id="jpg-gallery" align="center" border="1" cellspacing="5" cellpadding="0"></table>
+    <table id="jpg-gallery" align="center" border="0" cellspacing="5" cellpadding="0" 
+    	   style="margin-top: 30px;"></table>
 	<table id="bigImgTable" align="center" cellspacing="10px">
 		<tr>
 			<td align="right">
@@ -206,8 +207,7 @@
 						jpgIconSrc) 
 	{
 		if(index == jpgImgs.length) {return;}
-		var imgId = jpgImgs[index];
-	
+		
 		// select or create row		  
 		var row = null;
 		if(cellIndex == 0) {
@@ -227,10 +227,21 @@
 		img.nextImgs = jpgNextImgs;
 		img.prevImgs = jpgPrevImgs;
 		img.imgType = 'jpg';
+		
+		var imgName = jpgImgs[index];
+		var imgNameLabel = document.createTextNode(imgName);
+		var imgNameSpan = document.createElement("span");
+		imgNameSpan.align = 'center';
+		imgNameSpan.style = 'width: 200px; display:block; word-break: break-all;'
+		imgNameSpan.append(imgNameLabel);  
 		  
 		//create cell and pass control further down the recursion chain			  
 		var cell = row.insertCell(cellIndex);
+		cell.align = 'center';
+		cell.style = 'vertical-align: top;'
 		cell.appendChild(img);
+		cell.appendChild(imgNameSpan);
+		
 		if(cellIndex < nHc-1) {
 			loadJpgImg(++index, 
 		  			   rowIndex, 
@@ -270,15 +281,14 @@
 	  }
 	}
 	
-	//TODO: parameterize to include .jpg case here
 	//init maps of <img name> -> <next img name>, 
 	//			   <img name> -> <prev img name>
-	function initImgMaps(imgs, bmpNextImgs, bmpPrevImgs) {
+	function initImgMaps(imgs, nextImgs, prevImgs) {
 		for(var i=0; i<imgs.length; i++) {
 			var next = i < imgs.length - 1 ? imgs[i+1] : null;
-			bmpNextImgs.set(imgs[i], next);
+			nextImgs.set(imgs[i], next);
 			var prev = i > 0 ? imgs[i-1] : null;
-			bmpPrevImgs.set(imgs[i], prev);
+			prevImgs.set(imgs[i], prev);
 		}
 	}
 	
