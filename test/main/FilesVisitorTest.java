@@ -33,18 +33,20 @@ public class FilesVisitorTest {
            );
     
     assertEquals(1, map.get(FileType.BMP).size()); 
-    assertEquals(1, map.get(FileType.JPG).size());
+    assertEquals(2, map.get(FileType.JPG).size());
     assertEquals(1, map.get(FileType.OTHER).size());
     assertEquals(2, map.get(FileType.DIR).size());
     
     assertEquals("2.bmp", map.get(FileType.BMP).get(0));
-    assertEquals("1.jpg", map.get(FileType.JPG).get(0));
     assertEquals("3.txt", map.get(FileType.OTHER).get(0));
     
-    List<String> l = map.get(FileType.DIR);
-    Collections.sort(l);
-    assertEquals("back", l.get(0));
-    assertEquals("dir1", l.get(1));
+    Collections.sort(map.get(FileType.JPG));
+    assertEquals("1.jpg", map.get(FileType.JPG).get(0));
+    assertEquals("4.JPG", map.get(FileType.JPG).get(1));
+    
+    Collections.sort(map.get(FileType.DIR));
+    assertEquals("a_dir", map.get(FileType.DIR).get(0));
+    assertEquals("dir1", map.get(FileType.DIR).get(1));
   }
   
 }

@@ -19,8 +19,6 @@ public class FilesVisitor implements FileVisitor<Path> {
   public FilesVisitor(Path minPath, Path bigPath) {
     this.repoMin = minPath;
     this.repo = bigPath;
-    //init with back to parent dir
-    list.add(new FileDescriptor("back", FileType.DIR));
   }
   
   @Override
@@ -51,7 +49,7 @@ public class FilesVisitor implements FileVisitor<Path> {
       return FileVisitResult.CONTINUE;
     }
     
-    if(ext.equals("jpg")) {
+    if(ext.equalsIgnoreCase("jpg")) {
       String bmpFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".bmp";
       boolean exist = Files.exists(Paths.get(repoMin.toString(), bmpFileName));
       if(exist) {

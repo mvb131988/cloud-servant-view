@@ -29,8 +29,8 @@ public class MainControllerTest {
     l0.add(new FileDescriptor("1.bmp", FileType.BMP));
     l0.add(new FileDescriptor("2.jpg", FileType.JPG));
     l0.add(new FileDescriptor("3.txt", FileType.OTHER));
-    l0.add(new FileDescriptor("back", FileType.DIR));
     l0.add(new FileDescriptor("dir1", FileType.DIR));
+    l0.add(new FileDescriptor("a_dir", FileType.DIR));
     when(fm.allPaths(Paths.get(repoMin), Paths.get(repo))).thenReturn(l0);
     
     ListResponse res = mc.list("");
@@ -38,16 +38,16 @@ public class MainControllerTest {
     assertEquals(1, res.getBmps().size()); 
     assertEquals(1, res.getJpgs().size());
     assertEquals(1, res.getOthers().size());
-    assertEquals(2, res.getDirs().size());
+    assertEquals(3, res.getDirs().size());
     
     assertEquals("1.bmp", res.getBmps().get(0));
     assertEquals("2.jpg", res.getJpgs().get(0));
     assertEquals("3.txt", res.getOthers().get(0));
     
     List<String> l = res.getDirs();
-    Collections.sort(l);
     assertEquals("back", l.get(0));
-    assertEquals("dir1", l.get(1));
+    assertEquals("a_dir", l.get(1));
+    assertEquals("dir1", l.get(2));
   }
   
 }

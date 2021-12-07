@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
@@ -61,20 +62,30 @@ public class MainController {
 		                      .map(e -> e.getName())
 		                      .collect(Collectors.toList());
 		
+		Collections.sort(bmps);
+		
 		List<String> jpgs = l0.stream()
                           .filter(e -> FileType.JPG.equals(e.getType()))
                           .map(e -> e.getName())
                           .collect(Collectors.toList());
 
+		Collections.sort(jpgs);
+		
 		List<String> others = l0.stream()
                             .filter(e -> FileType.OTHER.equals(e.getType()))
                             .map(e -> e.getName())
                             .collect(Collectors.toList());
 		
+		Collections.sort(others);
+		
     List<String> dirs = l0.stream()
                           .filter(e -> FileType.DIR.equals(e.getType()))
                           .map(e -> e.getName())
                           .collect(Collectors.toList());
+    
+    Collections.sort(dirs);
+    //back to parent dir
+    dirs.add(0, "back");
     
 		return new ListResponse(bmps, jpgs, others, dirs);
 	}
