@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -145,6 +146,24 @@ public class MainController {
 		return inarr;
 	}
 
+	/**
+	 * Returns non image file
+	 * 
+	 * @param name
+	 * @return
+	 * @throws IOException
+	 */
+	@PostMapping("/other")
+  public @ResponseBody byte[] getOther(@RequestBody String sPath) throws IOException {
+    Path p = Paths.get(bigPathRoot.toString(), sPath);
+    byte[] inarr;
+    try(InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);) {
+      inarr = new byte[is.available()];
+      is.read(inarr);
+    }
+    return inarr;
+  }
+	
   public void setFm(FileManager fm) {
     this.fm = fm;
   }
