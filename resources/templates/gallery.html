@@ -111,6 +111,7 @@
 	var loadBigJpgUrl = '/big-img';
 	var otherUrl = '/other';
 	
+	var host = location.host;
 	var iw = window.innerWidth;
 	var ih = window.innerHeight;
 	//number of horizontal cells in bmp-gallery table
@@ -131,14 +132,6 @@
 	var dirTable = document.getElementById("directories");
 	var controlDiv = document.getElementById("control");
 	
-	var bigImageControl = new BigImageControl(bmpGalleryTable, 
-											  jpgGalleryTable, 
-											  otherGalleryTable,
-											  dirTable,
-											  controlDiv,
-											  iw,
-											  ih);
-	
 	// common img for all unprocessed .jpg images
 	var jpgIconImg = document.getElementById("jpgIconImg");
 	document.body.removeChild(jpgIconImg);
@@ -151,7 +144,16 @@
 	var shareButton = findById("share", controlDiv.getElementsByTagName("input"));
 	//share url
 	var shareUrlDiv = document.getElementById("share-url");
-	shareLinkContext(shareButton, shareUrlDiv);
+	shareLinkContext(shareButton, shareUrlDiv, host);
+	
+	var bigImageControl = new BigImageControl(bmpGalleryTable, 
+											  jpgGalleryTable, 
+											  otherGalleryTable,
+											  dirTable,
+											  controlDiv,
+											  shareUrlDiv,
+											  iw,
+											  ih);
 	
 	//img object for dir image
 	var dirImg = new Image();

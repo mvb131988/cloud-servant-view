@@ -5,6 +5,7 @@ function BigImageControl(bmpGalleryTable,
 						 otherGalleryTable,
 						 dirTable,
 						 controlDiv,
+						 shareUrlDiv,
 						 iw,
 						 ih) 
 {
@@ -69,6 +70,7 @@ function BigImageControl(bmpGalleryTable,
 	var closeBigImgClickHandler = function() {
 		bigImgTable.parentNode.removeChild(bigImgTable);
 		if(controlDiv) {document.body.appendChild(controlDiv);}
+		if(shareUrlDiv) {document.body.appendChild(shareUrlDiv);}
 		if(dirTable) {document.body.appendChild(dirTable);}
 		document.body.appendChild(bmpGalleryTable);
 		document.body.appendChild(jpgGalleryTable);
@@ -144,6 +146,7 @@ function BigImageControl(bmpGalleryTable,
 	this.smallImageClickHandler = function() {
 		currentSmallImg = this;
 		if(controlDiv) {controlDiv.parentNode.removeChild(controlDiv);}
+		if(shareUrlDiv) {shareUrlDiv.parentNode.removeChild(shareUrlDiv);}
 		if(dirTable) {dirTable.parentNode.removeChild(dirTable);}
 		bmpGalleryTable.parentNode.removeChild(bmpGalleryTable);
 		jpgGalleryTable.parentNode.removeChild(jpgGalleryTable);
