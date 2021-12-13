@@ -42,14 +42,15 @@ public class SharingController {
     return "sharing-gallery";
   }
   
-  @GetMapping("/sharing/list")
+  @PostMapping("/sharing/list")
   public @ResponseBody ListResponse list(@CookieValue("path-id") String pathId) throws IOException {
     ListResponse response = new ListResponse(null, null, null, null);
     
     //find a value(dir relative path) for the corresponding path-id
     String path = shareRepository.getPath(pathId);
     if(path != null) {
-      List<FileDescriptor> l0 = allPaths(Paths.get(minPathRoot), Paths.get(bigPathRoot));
+      List<FileDescriptor> l0 = allPaths(Paths.get(minPathRoot.toString(), path), 
+                                         Paths.get(bigPathRoot.toString(), path));
       
       List<String> bmps = l0.stream()
           .filter(e -> FileType.BMP.equals(e.getType()))
@@ -159,6 +160,34 @@ public class SharingController {
       Path p = Paths.get(imgResourcesPathRoot).resolve(Paths.get(imgName));
       InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
       
+      inarr = new byte[is.available()];
+      is.read(inarr);
+    }
+    return inarr;
+  }
+  
+  /**
+   * Returns non image file
+   * 
+   * @param sPath - here consists of file name only
+   * @return
+   * @throws IOException
+   */
+  @PostMapping("/sharing/other")
+  public @ResponseBody byte[] getOther(@CookieValue("path-id") String pathId,
+                                       @RequestBody String sPath) throws IOException {
+    if(pathId == null || shareRepository.getPath(pathId) == null) return null;
+    
+    //sPath must be in presented in the format <file-name>.<file-extension>
+    //cases when:
+    // + <path>/<file-name>.<file-extension>
+    // + ../<path>/<file-name>.<file-extension>
+    //are unacceptable
+    sPath = Paths.get(sPath).getFileName().toString();
+    
+    Path p = Paths.get(bigPathRoot.toString(), shareRepository.getPath(pathId), sPath);
+    byte[] inarr;
+    try(InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);) {
       inarr = new byte[is.available()];
       is.read(inarr);
     }

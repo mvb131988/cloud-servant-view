@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 public class MainController {
@@ -90,6 +91,11 @@ public class MainController {
     
 		return new ListResponse(bmps, jpgs, others, dirs);
 	}
+	
+	@GetMapping("/")
+  public ModelAndView greeting() throws IOException {
+	  return new ModelAndView("redirect:" + "/imgs");
+  }
 	
 	@GetMapping("/imgs")
 	public String greeting(Model model, ServletRequest request) throws IOException {

@@ -5,8 +5,12 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-    <table id="gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
-	<table id="bigImg" align="center" cellspacing="10px">
+    <table id="bmp-gallery" align="center" border="0" cellspacing="5" cellpadding="0"></table>
+    <table id="jpg-gallery" align="center" border="0" cellspacing="5" cellpadding="0" 
+    	   style="margin-top: 30px;"></table>
+  	<table id="other-gallery" align="center" border="0" cellspacing="5" cellpadding="0" 
+    	   style="margin-top: 30px;"></table>
+	<table id="bigImgTable" align="center" cellspacing="10px">
 		<tr>
 			<td align="right">
 				<img id="prevImg"></img>
@@ -25,11 +29,16 @@
 			</tr>
 		</table>
 	</div>
+	<img id="jpgIconImg"></img>
+	<img id="otherIconImg"></img>
 </body>
+
+<script type="text/javascript" src="/js/big-image.js"></script>
+<script type="text/javascript" src="/js/gallery.js"></script>
 
 <script>
 	/////////////////// Loading image /////////////////////
-	function initResourceImage(resourceDescriptor) {
+	function initResourceImage(resourceDescriptor, bigImageControl) {
 		var oReq = new XMLHttpRequest();
 		oReq.open("POST", "/sharing/resource-img", true);
 		oReq.responseType = "arraybuffer";
@@ -41,176 +50,46 @@
 		  resourceDescriptor.obj.src = objectURL;
 		  
 		  if(resourceDescriptor.next != null) {
-		  	initResourceImage(resourceDescriptor.next);
+		  	initResourceImage(resourceDescriptor.next, bigImageControl);
 		  } else {
-		  	initGallery();
+		  	initGalleries(bigImageControl);
 		  }
 		};
 		oReq.send(resourceDescriptor.name);
 	}
-	///////////////////////////////////////////////////////
-
-	//////////////// gallery + dirs navigation ////////////
-	//Getting list of all images in the gallery together 
-	//with dirs navigation section as well as triggering 
-	//loading of the images itself
-	function initGallery() {
+	
+	// Getting the list of all images for bmp-gallery, jpg-gallery 
+	// and dirs navigation section. Hand over control to dirs 
+	// navigation section and bmp-gallery, jpg-gallery 
+	// initialization methods 
+	function initGalleries(bigImageControl) {
 		var imgsRequest = new XMLHttpRequest();
-		imgsRequest.open("GET", "/sharing/list", true);
+		imgsRequest.open("POST", "/sharing/list", true);
 		imgsRequest.onreadystatechange = function() {
 		    if (this.readyState == 4 && this.status == 200) {
-		        imgs = JSON.parse(this.responseText).files;
-		        if(imgs) {
-		        	initImgMaps(imgs); 
-		        	loadImg(0,0,0);
-		        }
+		    	//init images
+    			var bmpImgs = JSON.parse(this.responseText).bmps;
+    			var jpgImgs = JSON.parse(this.responseText).jpgs;
+    			//init non images
+    			var others = JSON.parse(this.responseText).others;
+			    
+			    initBmpGallery(bigImageControl, bmpImgs);
+			    initJpgGallery(bigImageControl, jpgImgs);
+			    initOtherGallery(others);
 		    }
 		};
-		imgsRequest.send();
-	}
-	
-	//Loads single img, creates img element and inserts it
-	//and then recursively invokes itself to load next image from
-	//the imgs list.
-	function loadImg(index, rowIndex, cellIndex) {
-		if(index == imgs.length) {return;}
-		var imgId = imgs[index];
-	
-		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/sharing/img", true);
-		oReq.responseType = "arraybuffer";
-		oReq.onload = function(oEvent) {
-		  var blob = new Blob([oReq.response], {type: "image/bmp"});
-		  var objectURL = URL.createObjectURL(blob);
-		  
-		  // select or create row		  
-		  var row = null;
-		  if(cellIndex == 0) {
-		  	//new row is started
-		  	row = galleryTable.insertRow(rowIndex);
-		  } 
-		  else {row = galleryTable.rows[rowIndex];}
-		  
-		  // create image object
-		  var img = new Image();
-		  img.id = imgs[index];
-		  img.row = row;
-		  img.cellIndex = cellIndex;
-		  img.onload  = cellIndex == nHc-1 || index == imgs.length-1 ? resizeRow : null;
-		  img.src = objectURL;
-		  img.addEventListener("click", bigImage);
-		  
-		  //create cell and pass control further down the recursion chain			  
-		  var cell = row.insertCell(cellIndex);
-		  cell.appendChild(img);
-		  if(cellIndex < nHc-1) {loadImg(++index, rowIndex, ++cellIndex);}
-		  else {loadImg(++index, ++rowIndex, 0);}
-		};
-		
-		oReq.send(imgId);
-	}
-	
-	//when a single row is completely filled with the images,
-	//find the minimum height amongst them and change their height
-	//to this minimum value
-	function resizeRow() {
-	  var i;
-	  var min = 2147483647;
-	  for(i=0; i<this.row.cells.length; i++) {
-	  	var h = this.row.cells[i].childNodes[0].height;
-	  	min = min >= h ? h : min;
-	  }
-	  for(i=0; i<this.row.cells.length; i++) {
-	    this.row.cells[i].childNodes[0].height = min;		  
-	  }
-	}
-	
-	//init maps of <img name> -> <next img name>, 
-	//			   <img name> -> <prev img name>
-	function initImgMaps(imgs) {
-		nextImgs = new Map();
-		prevImgs = new Map();
-		
-		var i;
-		for(i=0; i<imgs.length; i++) {
-			var next = i < imgs.length - 1 ? imgs[i+1] : null;
-			nextImgs.set(imgs[i], next);
-			var prev = i > 0 ? imgs[i-1] : null;
-			prevImgs.set(imgs[i], prev);
-		}
-	}
-	///////////////////////////////////////////////////////
-	
-	/////////////////// Load big image ////////////////////
-	function bigImage() {
-		galleryTable.parentNode.removeChild(galleryTable);
-				
-		document.body.appendChild(loadingImgTable.parentNode);
-		
-		loadBigImage(this.id);
-	}
-
-	//imgName is equal to img id
-	function loadBigImage(imgName) {
-		//replace bmp extension to jpg
-		var bigImgName = imgName.substring(0,imgName.indexOf(".")) + ".jpg";
-	
-		var oReq = new XMLHttpRequest();
-		oReq.open("POST", "/sharing/big-img", true);
-		oReq.responseType = "arraybuffer";
-		
-		oReq.onload = function(oEvent) {
-		  var blob = new Blob([oReq.response], {type: "image/jpg"});
-		  var objectURL = URL.createObjectURL(blob);
-		  
-		  bigImg.src = objectURL;
-		  bigImg.name = imgName.substring(0,imgName.indexOf("."));
-		  document.body.removeChild(loadingImgTable.parentNode);
-		  document.body.appendChild(bigImgTable);
-		};
-		oReq.send(bigImgName);
-	}
-	
-	function loadNextBigImg() {
-		var next = nextImgs.get(bigImg.name + ".bmp");
-		if(next != null) {
-			bigImgTable.parentNode.removeChild(bigImgTable);
-			document.body.appendChild(loadingImgTable.parentNode);
-			loadBigImage(next);
-		}
-	}
-	
-	function loadPrevBigImg() {
-		var prev = prevImgs.get(bigImg.name + ".bmp");
-		if(prev != null) {
-			bigImgTable.parentNode.removeChild(bigImgTable);
-			document.body.appendChild(loadingImgTable.parentNode);
-			loadBigImage(prev);
-		}
-	}
-	///////////////////////////////////////////////////////
-
-	/////////////////// Cancel button /////////////////////
-	function closeBigImg() {
-		bigImgTable.parentNode.removeChild(bigImgTable);
-		document.body.appendChild(galleryTable);
-	}
-	///////////////////////////////////////////////////////
-	
-	/////////////////// Helpers  //////////////////////////
-	function findById(id, elements) {
-		var i;
-		for(i=0; i<elements.length; i++) {
-			if(elements[i].id == id) {return elements[i];}
-		}
-		return null;
+		imgsRequest.send(currentPath);
 	}
 	///////////////////////////////////////////////////////
 	
 	/////////////////// global  space /////////////////////
+	var loadBmpImgUrl = '/sharing/img';
+	var loadBigJpgUrl = '/sharing/big-img';
+	var otherUrl = '/sharing/other';
+	
 	var iw = window.innerWidth;
 	var ih = window.innerHeight;
-	//number of horizontal cells in gallery table
+	//number of horizontal cells in bmp-gallery table
 	var nHc = Math.floor(iw/200);
 	
 	//consider table cellspacing
@@ -218,68 +97,75 @@
 		nHc--;
 	} 
 	
-	var galleryTable = document.getElementById("gallery");
-	var bigImgTable = document.getElementById("bigImg");
-	document.body.removeChild(bigImgTable);
-	var loadingImgTable = document.getElementById("loadingImgTable");
-	document.body.removeChild(loadingImgTable.parentNode);
-	loadingImgTable.parentNode.style.marginTop = Math.floor(ih/3) + "px";
+	// table for unprocessed(exists paired .bmp image) .jpg images
+	var bmpGalleryTable = document.getElementById("bmp-gallery");
+	// table for unprocessed(no paired .bmp image) .jpg images
+	var jpgGalleryTable = document.getElementById("jpg-gallery");
+	// table for non-image files
+	var otherGalleryTable = document.getElementById("other-gallery");
 	
-	var bigImg = findById("bigImg", bigImgTable.getElementsByTagName("img"));
-	bigImg.width = iw-100;
+	var bigImageControl = new BigImageControl(bmpGalleryTable, 
+											  jpgGalleryTable, 
+											  otherGalleryTable,
+											  null,
+											  null,
+											  iw,
+											  ih);
 	
-	var cancelImg = findById("cancelImg", bigImgTable.getElementsByTagName("img"));
-	cancelImg.width = Math.floor(bigImg.width/10);
-	cancelImg.addEventListener("click", closeBigImg);
+	// common img for all unprocessed .jpg images
+	var jpgIconImg = document.getElementById("jpgIconImg");
+	document.body.removeChild(jpgIconImg);
 	
-	var prevImg = findById("prevImg", bigImgTable.getElementsByTagName("img"));
-	prevImg.width = Math.floor(bigImg.width/10);
-	prevImg.addEventListener("click", loadPrevBigImg);
+	// common img for all non-image files
+	var otherIconImg = document.getElementById("otherIconImg");
+	document.body.removeChild(otherIconImg);
 	
-	var nextImg = findById("nextImg", bigImgTable.getElementsByTagName("img"));
-	nextImg.width = Math.floor(bigImg.width/10);
-	nextImg.addEventListener("click", loadNextBigImg);
-	
-	//before big image is loaded loading image is shown
-	var loadingImg = loadingImgTable.getElementsByTagName("img")[0];
-	
-	//is populated during gallery loading
-	var imgs;
-	//map of <img name> -> <next img name>
-	var nextImgs;
-	//map of <img name> -> <prev img name>
-	var prevImgs;
+	var currentPath = "/";
 	///////////////////////////////////////////////////////
 
 	var loadingDescriptor = new Object();
-	loadingDescriptor.obj=loadingImg;
+	loadingDescriptor.obj=bigImageControl.loadingImg;
 	loadingDescriptor.type="image/gif";
 	loadingDescriptor.name="loading.gif";
 	loadingDescriptor.next = null;
 	
 	var cancelDescriptor = new Object();
-	cancelDescriptor.obj=cancelImg;
+	cancelDescriptor.obj=bigImageControl.cancelImg;
 	cancelDescriptor.type="image/png";
 	cancelDescriptor.name="cancel.png";
 	cancelDescriptor.next = null;
 	
 	var prevImgDescriptor = new Object();
-	prevImgDescriptor.obj=prevImg;
+	prevImgDescriptor.obj=bigImageControl.prevImg;
 	prevImgDescriptor.type="image/png";
 	prevImgDescriptor.name="left.png";
 	prevImgDescriptor.next=null;
 	
 	var nextImgDescriptor = new Object();
-	nextImgDescriptor.obj=nextImg;
+	nextImgDescriptor.obj=bigImageControl.nextImg;
 	nextImgDescriptor.type="image/png";
 	nextImgDescriptor.name="right.png";
 	nextImgDescriptor.next=null;
 	
+	var jpegIconImgDescriptor = new Object();
+	jpegIconImgDescriptor.obj=jpgIconImg;
+	jpegIconImgDescriptor.type="image/png";
+	jpegIconImgDescriptor.name="jpeg-icon.png";
+	jpegIconImgDescriptor.next=null;
+
+	var otherIconImgDescriptor = new Object();
+	otherIconImgDescriptor.obj=otherIconImg;
+	otherIconImgDescriptor.type="image/png";
+	otherIconImgDescriptor.name="other-icon.png";
+	otherIconImgDescriptor.next=null;
+
 	loadingDescriptor.next = cancelDescriptor;
 	cancelDescriptor.next = prevImgDescriptor;
 	prevImgDescriptor.next = nextImgDescriptor;
+	nextImgDescriptor.next = jpegIconImgDescriptor;
+	jpegIconImgDescriptor.next = otherIconImgDescriptor;
 	
-	initResourceImage(loadingDescriptor);
+	initResourceImage(loadingDescriptor, bigImageControl);
 
 </script>
 
