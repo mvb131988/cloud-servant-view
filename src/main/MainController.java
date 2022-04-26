@@ -3,6 +3,8 @@ package main;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +15,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,26 +163,41 @@ public class MainController {
 	 * @throws IOException
 	 */
 	@PostMapping("/other")
-  public @ResponseBody byte[] getOther(@RequestBody String sPath) throws IOException {
-    Path p = Paths.get(bigPathRoot.toString(), sPath);
-    byte[] inarr;
-    try(InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);) {
-      inarr = new byte[is.available()];
-      is.read(inarr);
-    }
-    return inarr;
-  }
-	
-  public void setFm(FileManager fm) {
-    this.fm = fm;
-  }
+	public @ResponseBody void getOther(@RequestBody String sPath, HttpServletResponse response) throws IOException {
+		Path p = Paths.get(bigPathRoot.toString(), sPath);
+		byte[] inarr;
 
-  public void setMinPathRoot(String minPathRoot) {
-    this.minPathRoot = minPathRoot;
-  }
+		BigDecimal totalSize = BigDecimal.ZERO;
+		
+		try (InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
+			 OutputStream os = response.getOutputStream();) 
+		{
+			inarr = new byte[262_144];
+			int size = is.read(inarr);
+			totalSize = totalSize.add(new BigDecimal(size));
+			
+			while(size != -1) {
+				os.write(inarr, 0, size);
+				size = is.read(inarr);
+				if(size > -1) {
+					totalSize = totalSize.add(new BigDecimal(size));
+				}
+			}
+		}
+		
+		logger.debug(totalSize.toPlainString());
+	}
 
-  public void setBigPathRoot(String bigPathRoot) {
-    this.bigPathRoot = bigPathRoot;
+	public void setFm(FileManager fm) {
+		this.fm = fm;
+	}
+
+	public void setMinPathRoot(String minPathRoot) {
+		this.minPathRoot = minPathRoot;
+	}
+
+	public void setBigPathRoot(String bigPathRoot) {
+		this.bigPathRoot = bigPathRoot;
   }
 	
 }
