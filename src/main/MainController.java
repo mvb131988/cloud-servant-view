@@ -167,6 +167,9 @@ public class MainController {
 		Path p = Paths.get(bigPathRoot.toString(), sPath);
 		byte[] inarr;
 
+		long totalSize0 = Files.size(p);
+		response.setContentLengthLong(totalSize0);
+		
 		BigDecimal totalSize = BigDecimal.ZERO;
 		
 		try (InputStream is = new BufferedInputStream(Files.newInputStream(p, StandardOpenOption.READ), 262_144);
