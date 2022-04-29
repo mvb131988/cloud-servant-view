@@ -51,6 +51,11 @@
 	
 	<img id="jpgIconImg"></img>
 	<img id="otherIconImg"></img>
+	
+	<form id="bigFileForm" action="/other" method="POST">
+		<input name="path" id="path" value="" style="border-width:0px; border:none;">
+	</form>
+	
 </body>
 
 <script type="text/javascript" src="/js/dir.js"></script>
@@ -165,6 +170,11 @@
 	
 	//img object for dir image
 	var dirImg = new Image();
+	
+	// big files couldn't be downloaded using AJAX (probably browser holds BLOB/Object URL in 
+	// memory and when file is too big it runs out of memory). Download via form submission
+	// does the trick
+	var bigFileForm = document.getElementById("bigFileForm");
 	
 	var currentPath = "/";
 	///////////////////////////////////////////////////////

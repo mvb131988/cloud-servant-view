@@ -23,9 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -163,12 +165,14 @@ public class MainController {
 	 * @throws IOException
 	 */
 	@PostMapping("/other")
-	public @ResponseBody void getOther(@RequestBody String sPath, HttpServletResponse response) throws IOException {
+	public void getOther(@RequestParam(name = "path") String sPath, HttpServletResponse response) throws IOException {
 		Path p = Paths.get(bigPathRoot.toString(), sPath);
 		byte[] inarr;
 
 		long totalSize0 = Files.size(p);
 		response.setContentLengthLong(totalSize0);
+		response.setContentType("application/octet-stream");
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + p.getFileName() + "\"");
 		
 		BigDecimal totalSize = BigDecimal.ZERO;
 		

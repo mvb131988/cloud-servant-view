@@ -213,41 +213,9 @@ function loadOther(index,
 	img.path = currentPath + others[index];
 	img.onclick = function() {
 		downloadLink.href = 'javascript:void(0)';
-		
-		document.body.appendChild(downloadProgressDiv);
-		if(controlDiv) {controlDiv.parentNode.removeChild(controlDiv);}
-		if(shareUrlDiv) {shareUrlDiv.parentNode.removeChild(shareUrlDiv);}
-		if(dirTable) {dirTable.parentNode.removeChild(dirTable);}
-		bmpGalleryTable.parentNode.removeChild(bmpGalleryTable);
-		jpgGalleryTable.parentNode.removeChild(jpgGalleryTable);
-		otherGalleryTable.parentNode.removeChild(otherGalleryTable);
-	
-		var oReq = new XMLHttpRequest();
-		oReq.open("POST", otherUrl, true);
-		oReq.responseType = "arraybuffer";
-		
-		oReq.onload = function(oEvent) {
-			document.body.removeChild(downloadProgressDiv);
-			if(controlDiv) {document.body.appendChild(controlDiv);}
-			if(shareUrlDiv) {document.body.appendChild(shareUrlDiv);}
-			if(dirTable) {document.body.appendChild(dirTable);}
-			document.body.appendChild(bmpGalleryTable);
-			document.body.appendChild(jpgGalleryTable);
-			document.body.appendChild(otherGalleryTable);
-		
-		  	var blob = new Blob([oReq.response], 
-		  						{type: oReq.getResponseHeader('Content-Type')});
-		  	var objectURL = URL.createObjectURL(blob);
-		  	downloadLink.href = objectURL;
-		  	downloadLink.click();
-		};
-		oReq.onprogress = function(oEvent) {
-			var percentage = Math.round(oEvent.loaded/oEvent.total*100);
-			
-			downloadProgressDiv.innerHTML = "Progress: " + percentage + " % (" + oEvent.loaded 
-											+ " from " + oEvent.total + " )";
-		};
-		oReq.send(this.path);
+		bigFileForm.getElementsByTagName('input')[0].setAttribute("value", this.path);
+		bigFileForm.submit();
+		bigFileForm.getElementsByTagName('input')[0].setAttribute("value", "");
 	}
 	
 	var imgName = others[index];
